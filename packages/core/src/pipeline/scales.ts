@@ -70,6 +70,54 @@ export function expandDomain(
 }
 
 /**
+ * Calculate a nice step size for the given range
+ */
+function niceStep(range: number, targetTicks: number = 5): number {
+  const rawStep = range / Math.max(1, targetTicks - 1)
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
+  const normalized = rawStep / magnitude
+
+  let nice: number
+  if (normalized <= 1.5) nice = 1
+  else if (normalized <= 3) nice = 2
+  else if (normalized <= 7) nice = 5
+  else nice = 10
+
+  return nice * magnitude
+}
+
+/**
+ * Expand domain to nice round numbers that include all data
+ * This creates visually appealing axis limits with round tick values
+ */
+export function niceDomain(
+  domain: [number, number],
+  targetTicks: number = 5
+): [number, number] {
+  const [min, max] = domain
+  const range = max - min
+
+  // Handle edge cases
+  if (range === 0) {
+    // Single value - expand around it
+    if (min === 0) return [-1, 1]
+    const magnitude = Math.pow(10, Math.floor(Math.log10(Math.abs(min))))
+    return [min - magnitude, min + magnitude]
+  }
+
+  // Calculate a nice step size
+  const step = niceStep(range, targetTicks)
+
+  // Expand min down to nearest nice number
+  const niceMin = Math.floor(min / step) * step
+
+  // Expand max up to nearest nice number
+  const niceMax = Math.ceil(max / step) * step
+
+  return [niceMin, niceMax]
+}
+
+/**
  * Resolved scale with concrete domain and mapping functions
  */
 export interface ResolvedScale {
@@ -336,7 +384,7 @@ export function buildScaleContext(
     )
   } else {
     const xDomain = userXScale?.domain as [number, number] | undefined ??
-      expandDomain(inferContinuousDomain(data, aes.x))
+      niceDomain(inferContinuousDomain(data, aes.x))
     x = createResolvedContinuousScale(
       'x',
       xDomain,
@@ -346,7 +394,7 @@ export function buildScaleContext(
 
   // Infer y domain (always continuous for now)
   const yDomain = userYScale?.domain as [number, number] | undefined ??
-    expandDomain(inferContinuousDomain(data, aes.y))
+    niceDomain(inferContinuousDomain(data, aes.y))
 
   // Create y scale (maps to vertical canvas range, inverted because y=0 is top)
   const y = createResolvedContinuousScale(

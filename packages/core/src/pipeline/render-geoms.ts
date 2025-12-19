@@ -154,6 +154,105 @@ export function renderGeomLine(
 }
 
 /**
+ * Render geom_area (filled area under line)
+ */
+export function renderGeomArea(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  if (data.length < 2) return
+
+  // Sort data by x value
+  const sorted = [...data].sort((a, b) => {
+    const ax = Number(a[aes.x]) || 0
+    const bx = Number(b[aes.x]) || 0
+    return ax - bx
+  })
+
+  // Group by color/group aesthetic if present
+  const groups = new Map<string, typeof sorted>()
+  const groupField = aes.group || aes.color
+
+  if (groupField) {
+    for (const row of sorted) {
+      const key = String(row[groupField] ?? 'default')
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(row)
+    }
+  } else {
+    groups.set('default', sorted)
+  }
+
+  // Get baseline (y=0 mapped to canvas, or bottom of plot area)
+  const plotBottom = Math.round(scales.y.range[0])
+  const plotTop = Math.round(scales.y.range[1])
+  let baseline = Math.round(scales.y.map(0))
+  baseline = Math.max(plotTop, Math.min(plotBottom, baseline))
+
+  // Area fill character - use a lighter shade for fill
+  const fillChar = geom.params.fillChar as string ?? '░'
+  const alpha = geom.params.alpha as number ?? 0.5
+
+  // Draw filled area for each group
+  for (const [groupKey, groupData] of groups) {
+    if (groupData.length < 2) continue
+
+    let baseColor = scales.color?.map(groupKey) ?? DEFAULT_POINT_COLOR
+    // Apply alpha by reducing color intensity
+    const fillColor: RGBA = {
+      r: Math.round(baseColor.r * alpha),
+      g: Math.round(baseColor.g * alpha),
+      b: Math.round(baseColor.b * alpha),
+      a: baseColor.a,
+    }
+
+    // For each x position, fill from baseline to the y value
+    for (let i = 0; i < groupData.length - 1; i++) {
+      const row1 = groupData[i]
+      const row2 = groupData[i + 1]
+
+      const x1 = Math.round(scales.x.map(row1[aes.x]))
+      const y1 = Math.round(scales.y.map(row1[aes.y]))
+      const x2 = Math.round(scales.x.map(row2[aes.x]))
+      const y2 = Math.round(scales.y.map(row2[aes.y]))
+
+      // Fill columns between x1 and x2
+      for (let x = x1; x <= x2; x++) {
+        // Interpolate y value at this x position
+        const t = x2 !== x1 ? (x - x1) / (x2 - x1) : 0
+        const yInterp = Math.round(y1 + (y2 - y1) * t)
+
+        // Fill from yInterp to baseline
+        const top = Math.min(yInterp, baseline)
+        const bottom = Math.max(yInterp, baseline)
+
+        for (let y = top; y <= bottom; y++) {
+          if (y >= plotTop && y <= plotBottom) {
+            canvas.drawChar(x, y, fillChar, fillColor)
+          }
+        }
+      }
+    }
+
+    // Draw the top edge line with full color
+    for (let i = 0; i < groupData.length - 1; i++) {
+      const row1 = groupData[i]
+      const row2 = groupData[i + 1]
+
+      const x1 = Math.round(scales.x.map(row1[aes.x]))
+      const y1 = Math.round(scales.y.map(row1[aes.y]))
+      const x2 = Math.round(scales.x.map(row2[aes.x]))
+      const y2 = Math.round(scales.y.map(row2[aes.y]))
+
+      drawLine(canvas, x1, y1, x2, y2, baseColor, '▄')
+    }
+  }
+}
+
+/**
  * Draw a line using Bresenham's algorithm
  */
 function drawLine(
@@ -201,12 +300,33 @@ export function renderGeomBar(
   scales: ScaleContext,
   canvas: TerminalCanvas
 ): void {
-  const barWidth = Math.max(1, Math.floor((geom.params.width as number) ?? 1))
-
   // Get plot area boundaries from scale range
   // y range is [bottom, top] (inverted for canvas coordinates)
   const plotBottom = Math.round(scales.y.range[0])
   const plotTop = Math.round(scales.y.range[1])
+
+  // Calculate bar width
+  let barWidth: number
+  const widthParam = geom.params.width as number | undefined
+
+  if (scales.x.type === 'discrete') {
+    // For discrete scales, calculate width based on available space
+    const domain = scales.x.domain as string[]
+    const plotWidth = scales.x.range[1] - scales.x.range[0]
+    const spacePerCategory = plotWidth / domain.length
+
+    if (widthParam !== undefined && widthParam >= 1) {
+      // Absolute width specified
+      barWidth = Math.max(1, Math.floor(widthParam))
+    } else {
+      // Proportional width (default 0.9 = 90% of space)
+      const proportion = widthParam ?? 0.9
+      barWidth = Math.max(1, Math.floor(spacePerCategory * proportion))
+    }
+  } else {
+    // Continuous scale - use specified width or default to 1
+    barWidth = Math.max(1, Math.floor(widthParam ?? 1))
+  }
 
   for (const row of data) {
     const xVal = row[aes.x]
@@ -373,6 +493,19 @@ export function renderGeomBoxplot(
   const medianColor: RGBA = { r: 255, g: 200, b: 50, a: 1 }
   const outlierColor: RGBA = { r: 214, g: 39, b: 40, a: 1 }
 
+  // Get plot area boundaries for clipping
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Helper to draw a character only if within plot bounds
+  const drawClipped = (x: number, y: number, char: string, color: RGBA) => {
+    if (x >= plotLeft && x <= plotRight && y >= plotTop && y <= plotBottom) {
+      canvas.drawChar(x, y, char, color)
+    }
+  }
+
   for (const row of data) {
     const x = row.x
     const lower = row.lower as number
@@ -396,53 +529,53 @@ export function renderGeomBoxplot(
 
     // Draw lower whisker (vertical line from lower to Q1)
     for (let y = yQ1; y <= yLower; y++) {
-      canvas.drawChar(cx, y, '│', whiskerColor)
+      drawClipped(cx, y, '│', whiskerColor)
     }
     // Lower whisker cap
     for (let dx = -halfWidth; dx <= halfWidth; dx++) {
-      canvas.drawChar(cx + dx, yLower, '─', whiskerColor)
+      drawClipped(cx + dx, yLower, '─', whiskerColor)
     }
 
     // Draw upper whisker (vertical line from Q3 to upper)
     for (let y = yUpper; y <= yQ3; y++) {
-      canvas.drawChar(cx, y, '│', whiskerColor)
+      drawClipped(cx, y, '│', whiskerColor)
     }
     // Upper whisker cap
     for (let dx = -halfWidth; dx <= halfWidth; dx++) {
-      canvas.drawChar(cx + dx, yUpper, '─', whiskerColor)
+      drawClipped(cx + dx, yUpper, '─', whiskerColor)
     }
 
     // Draw box (from Q1 to Q3)
     // Top of box (Q3)
-    canvas.drawChar(cx - halfWidth, yQ3, '┌', boxColor)
+    drawClipped(cx - halfWidth, yQ3, '┌', boxColor)
     for (let dx = -halfWidth + 1; dx < halfWidth; dx++) {
-      canvas.drawChar(cx + dx, yQ3, '─', boxColor)
+      drawClipped(cx + dx, yQ3, '─', boxColor)
     }
-    canvas.drawChar(cx + halfWidth, yQ3, '┐', boxColor)
+    drawClipped(cx + halfWidth, yQ3, '┐', boxColor)
 
     // Sides of box
     for (let y = yQ3 + 1; y < yQ1; y++) {
-      canvas.drawChar(cx - halfWidth, y, '│', boxColor)
-      canvas.drawChar(cx + halfWidth, y, '│', boxColor)
+      drawClipped(cx - halfWidth, y, '│', boxColor)
+      drawClipped(cx + halfWidth, y, '│', boxColor)
     }
 
     // Bottom of box (Q1)
-    canvas.drawChar(cx - halfWidth, yQ1, '└', boxColor)
+    drawClipped(cx - halfWidth, yQ1, '└', boxColor)
     for (let dx = -halfWidth + 1; dx < halfWidth; dx++) {
-      canvas.drawChar(cx + dx, yQ1, '─', boxColor)
+      drawClipped(cx + dx, yQ1, '─', boxColor)
     }
-    canvas.drawChar(cx + halfWidth, yQ1, '┘', boxColor)
+    drawClipped(cx + halfWidth, yQ1, '┘', boxColor)
 
     // Draw median line
     for (let dx = -halfWidth + 1; dx < halfWidth; dx++) {
-      canvas.drawChar(cx + dx, yMedian, '━', medianColor)
+      drawClipped(cx + dx, yMedian, '━', medianColor)
     }
 
     // Draw outliers
     if (showOutliers && outliers.length > 0) {
       for (const outlier of outliers) {
         const yOutlier = Math.round(scales.y.map(outlier))
-        canvas.drawChar(cx, yOutlier, '○', outlierColor)
+        drawClipped(cx, yOutlier, '○', outlierColor)
       }
     }
   }
@@ -484,6 +617,9 @@ export function renderGeom(
       break
     case 'boxplot':
       renderGeomBoxplot(data, geom, aes, scales, canvas)
+      break
+    case 'area':
+      renderGeomArea(data, geom, aes, scales, canvas)
       break
     default:
       // Unknown geom type, skip

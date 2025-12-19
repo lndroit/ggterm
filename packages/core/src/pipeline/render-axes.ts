@@ -133,11 +133,19 @@ export function renderBottomAxis(
         // Tick mark
         canvas.drawChar(x, y, '┬', axisColor)
 
-        // Category label (truncate if needed)
+        // Category label (truncate with ellipsis if needed)
         const maxLen = Math.floor((xEnd - xStart) / domain.length) - 1
-        const tickLabel = category.length > maxLen
-          ? category.substring(0, Math.max(3, maxLen))
-          : category
+        let tickLabel: string
+        if (category.length > maxLen) {
+          // Truncate and add ellipsis if there's room
+          if (maxLen >= 4) {
+            tickLabel = category.substring(0, maxLen - 1) + '…'
+          } else {
+            tickLabel = category.substring(0, Math.max(1, maxLen))
+          }
+        } else {
+          tickLabel = category
+        }
         const labelX = x - Math.floor(tickLabel.length / 2)
         canvas.drawString(Math.max(xStart, labelX), y + 1, tickLabel, axisColor)
       }

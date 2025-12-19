@@ -14,6 +14,7 @@ export {
   inferContinuousDomain,
   inferDiscreteDomain,
   expandDomain,
+  niceDomain,
   DEFAULT_POINT_COLOR,
 } from './scales'
 export type { ResolvedScale, ResolvedColorScale, ScaleContext } from './scales'
