@@ -1,0 +1,43 @@
+{
+  "name": "ggterm",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A Grammar of Graphics for Terminal User Interfaces",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun run --filter '*' build",
+    "test": "bun test",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "lint:fix": "eslint packages/*/src/**/*.ts --fix",
+    "format": "prettier --write 'packages/*/src/**/*.ts'",
+    "format:check": "prettier --check 'packages/*/src/**/*.ts'",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.3.0",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "prettier": "^3.2.0"
+  },
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ggterm.git"
+  },
+  "keywords": [
+    "grammar-of-graphics",
+    "terminal",
+    "tui",
+    "visualization",
+    "charts",
+    "plots",
+    "braille",
+    "unicode"
+  ]
+}

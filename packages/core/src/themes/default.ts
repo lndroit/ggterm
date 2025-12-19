@@ -1,0 +1,135 @@
+/**
+ * Default theme for ggterm
+ */
+
+import type { Theme } from '../types'
+
+/**
+ * Minimal default theme
+ */
+export function defaultTheme(): Theme {
+  return {
+    panel: {
+      background: '',
+      border: 'single',
+      grid: { major: '·', minor: null },
+    },
+    axis: {
+      text: { color: '' },
+      ticks: { char: '┼', length: 1 },
+      title: { color: '', bold: false },
+    },
+    legend: {
+      position: 'right',
+      title: { bold: true },
+    },
+    title: {
+      align: 'center',
+      bold: true,
+    },
+  }
+}
+
+/**
+ * Minimal theme with no decorations
+ */
+export function themeMinimal(): Theme {
+  return {
+    panel: {
+      background: '',
+      border: 'none',
+      grid: { major: null, minor: null },
+    },
+    axis: {
+      text: { color: '' },
+      ticks: { char: '│', length: 1 },
+      title: { color: '', bold: false },
+    },
+    legend: {
+      position: 'right',
+      title: { bold: false },
+    },
+    title: {
+      align: 'left',
+      bold: false,
+    },
+  }
+}
+
+/**
+ * Dark theme
+ */
+export function themeDark(): Theme {
+  return {
+    panel: {
+      background: '#1e1e1e',
+      border: 'rounded',
+      grid: { major: '#333', minor: null },
+    },
+    axis: {
+      text: { color: '#ccc' },
+      ticks: { char: '┼', length: 1 },
+      title: { color: '#fff', bold: true },
+    },
+    legend: {
+      position: 'right',
+      title: { bold: true },
+    },
+    title: {
+      align: 'center',
+      bold: true,
+    },
+  }
+}
+
+/**
+ * Classic theme (ggplot2 style)
+ */
+export function themeClassic(): Theme {
+  return {
+    panel: {
+      background: '',
+      border: 'single',
+      grid: { major: null, minor: null },
+    },
+    axis: {
+      text: { color: '' },
+      ticks: { char: '─', length: 1 },
+      title: { color: '', bold: true },
+    },
+    legend: {
+      position: 'right',
+      title: { bold: true },
+    },
+    title: {
+      align: 'center',
+      bold: true,
+    },
+  }
+}
+
+/**
+ * Empty theme (just the plot area)
+ */
+export function themeVoid(): Theme {
+  return {
+    panel: {
+      background: '',
+      border: 'none',
+      grid: { major: null, minor: null },
+    },
+    axis: {
+      text: { color: '' },
+      ticks: { char: '', length: 0 },
+      title: { color: '', bold: false },
+    },
+    legend: {
+      position: 'none',
+      title: { bold: false },
+    },
+    title: {
+      align: 'left',
+      bold: false,
+    },
+  }
+}

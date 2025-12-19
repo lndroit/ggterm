@@ -1,0 +1,42 @@
+{
+  "name": "@ggterm/opentui",
+  "version": "0.0.1",
+  "description": "OpenTUI/React integration components for ggterm",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "opentui",
+    "react",
+    "terminal",
+    "tui",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@ggterm/core": "^0.0.1",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@ggterm/core": "workspace:*",
+    "@types/react": "^18.2.0",
+    "typescript": "^5.3.0",
+    "@types/bun": "^1.1.0"
+  }
+}

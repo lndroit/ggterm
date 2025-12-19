@@ -1,0 +1,39 @@
+{
+  "name": "@ggterm/render-braille",
+  "version": "0.0.1",
+  "description": "Braille dot matrix renderer for ggterm",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "braille",
+    "unicode",
+    "terminal",
+    "renderer"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "@ggterm/core": "^0.0.1"
+  },
+  "devDependencies": {
+    "@ggterm/core": "workspace:*",
+    "typescript": "^5.3.0",
+    "@types/bun": "^1.1.0"
+  }
+}
