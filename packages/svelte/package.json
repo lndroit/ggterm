@@ -16,6 +16,7 @@
   "scripts": {
     "build": "svelte-package -i src -o dist",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "files": [
