@@ -8,6 +8,13 @@ import {
   facet_grid,
   computeFacetPanels,
   calculatePanelLayouts,
+  calculateGridStripLayout,
+  // Labeller functions
+  label_value,
+  label_both,
+  label_parsed,
+  label_wrap,
+  as_labeller,
 } from '../../facets/index'
 
 describe('facet_wrap', () => {
@@ -343,5 +350,167 @@ describe('calculatePanelLayouts', () => {
 
     expect(new Set(widths).size).toBe(1)
     expect(new Set(heights).size).toBe(1)
+  })
+
+  it('should handle grid layout options', () => {
+    const layouts = calculatePanelLayouts(80, 24, 2, 2, false, {
+      top: 1,
+      right: 1,
+      bottom: 1,
+      left: 1,
+    }, {
+      isGrid: true,
+      hasRowVar: true,
+      hasColVar: true,
+    })
+
+    expect(layouts).toHaveLength(4)
+    // Grid panels should have positive dimensions
+    for (const layout of layouts) {
+      expect(layout.width).toBeGreaterThan(0)
+      expect(layout.height).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('labeller functions', () => {
+  describe('label_value', () => {
+    it('should return value unchanged', () => {
+      expect(label_value('category_A')).toBe('category_A')
+      expect(label_value('test')).toBe('test')
+    })
+  })
+
+  describe('label_both', () => {
+    it('should combine variable and value', () => {
+      expect(label_both('A', 'category')).toBe('category: A')
+      expect(label_both('2020', 'year')).toBe('year: 2020')
+    })
+
+    it('should return just value if no variable', () => {
+      expect(label_both('A')).toBe('A')
+      expect(label_both('test', undefined)).toBe('test')
+    })
+  })
+
+  describe('label_parsed', () => {
+    it('should replace underscores with spaces', () => {
+      expect(label_parsed('category_A')).toBe('category A')
+      expect(label_parsed('my_category_value')).toBe('my category value')
+    })
+
+    it('should leave text without underscores unchanged', () => {
+      expect(label_parsed('category')).toBe('category')
+    })
+  })
+
+  describe('label_wrap', () => {
+    it('should truncate long labels', () => {
+      const labeller = label_wrap(10)
+      expect(labeller('short')).toBe('short')
+      expect(labeller('this is a very long label')).toBe('this is a…')
+    })
+
+    it('should leave short labels unchanged', () => {
+      const labeller = label_wrap(20)
+      expect(labeller('short')).toBe('short')
+    })
+  })
+
+  describe('as_labeller', () => {
+    it('should map values using provided record', () => {
+      const labeller = as_labeller({
+        'A': 'Category A',
+        'B': 'Category B',
+        'C': 'Category C',
+      })
+      expect(labeller('A')).toBe('Category A')
+      expect(labeller('B')).toBe('Category B')
+    })
+
+    it('should return original value if not in record', () => {
+      const labeller = as_labeller({ 'A': 'Category A' })
+      expect(labeller('unknown')).toBe('unknown')
+    })
+  })
+})
+
+describe('facet options', () => {
+  it('facet_wrap should accept labeller option', () => {
+    const facet = facet_wrap('category', {
+      labeller: label_both,
+    })
+    expect(facet.labeller).toBe(label_both)
+  })
+
+  it('facet_grid should accept labeller option', () => {
+    const facet = facet_grid({ rows: 'gender', cols: 'treatment' }, {
+      labeller: label_parsed,
+    })
+    expect(facet.labeller).toBe(label_parsed)
+  })
+
+  it('facet_grid should accept switch option', () => {
+    const facet = facet_grid({ rows: 'gender' }, { switch: 'y' })
+    expect(facet.switch).toBe('y')
+  })
+})
+
+describe('calculateGridStripLayout', () => {
+  it('should calculate strip positions for grid with both row and col variables', () => {
+    const stripLayout = calculateGridStripLayout(
+      80, 24, 2, 3, false,
+      { top: 1, right: 1, bottom: 2, left: 5 },
+      true, true
+    )
+
+    // Should have 3 column strip positions
+    expect(stripLayout.colStripX).toHaveLength(3)
+    // Should have 2 row strip positions
+    expect(stripLayout.rowStripY).toHaveLength(2)
+    // Strip positions should be non-negative
+    expect(stripLayout.colStripY).toBeGreaterThanOrEqual(0)
+    expect(stripLayout.rowStripX).toBeGreaterThan(0)
+    expect(stripLayout.colStripWidth).toBeGreaterThan(0)
+    expect(stripLayout.rowStripWidth).toBeGreaterThan(0)
+  })
+
+  it('should handle grid with only column variable', () => {
+    const stripLayout = calculateGridStripLayout(
+      80, 24, 1, 3, false,
+      { top: 1, right: 1, bottom: 2, left: 5 },
+      false, true
+    )
+
+    expect(stripLayout.colStripX).toHaveLength(3)
+    expect(stripLayout.rowStripY).toHaveLength(1)
+  })
+
+  it('should handle grid with only row variable', () => {
+    const stripLayout = calculateGridStripLayout(
+      80, 24, 2, 1, false,
+      { top: 1, right: 1, bottom: 2, left: 5 },
+      true, false
+    )
+
+    expect(stripLayout.rowStripY).toHaveLength(2)
+    expect(stripLayout.colStripX).toHaveLength(1)
+  })
+
+  it('should reserve space for title', () => {
+    const withoutTitle = calculateGridStripLayout(
+      80, 24, 2, 2, false,
+      { top: 1, right: 1, bottom: 2, left: 5 },
+      true, true
+    )
+
+    const withTitle = calculateGridStripLayout(
+      80, 24, 2, 2, true,
+      { top: 1, right: 1, bottom: 2, left: 5 },
+      true, true
+    )
+
+    // Column strip should be lower when title is present
+    expect(withTitle.colStripY).toBeGreaterThan(withoutTitle.colStripY)
   })
 })

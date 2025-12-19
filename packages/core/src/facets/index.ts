@@ -2,7 +2,44 @@
  * Faceting functions for creating small multiples
  */
 
-import type { Facet, DataSource } from '../types'
+import type { Facet, DataSource, Labeller } from '../types'
+
+// Re-export Labeller type for convenience
+export type { Labeller } from '../types'
+
+/**
+ * Default labeller - just returns the value
+ */
+export const label_value: Labeller = (value) => value
+
+/**
+ * Labeller that shows both variable name and value
+ * @example "category: A"
+ */
+export const label_both: Labeller = (value, variable) =>
+  variable ? `${variable}: ${value}` : value
+
+/**
+ * Labeller that parses underscores as spaces
+ * @example "my_category" -> "my category"
+ */
+export const label_parsed: Labeller = (value) => value.replace(/_/g, ' ')
+
+/**
+ * Labeller that wraps long labels
+ */
+export const label_wrap: (width: number) => Labeller = (width) => (value) => {
+  if (value.length <= width) return value
+  // Simple truncation with ellipsis for terminal
+  return value.substring(0, width - 1) + '…'
+}
+
+/**
+ * Create a custom labeller from a record of value -> label mappings
+ */
+export function as_labeller(labels: Record<string, string>): Labeller {
+  return (value) => labels[value] ?? value
+}
 
 export interface FacetWrapOptions {
   /** Number of columns (default: auto-calculated) */
@@ -15,6 +52,8 @@ export interface FacetWrapOptions {
   dir?: 'h' | 'v'
   /** Strip position: 'top' or 'bottom' (default: 'top') */
   strip?: 'top' | 'bottom'
+  /** Labeller function for customizing strip labels */
+  labeller?: Labeller
 }
 
 /**
@@ -40,16 +79,17 @@ export function facet_wrap(
     ncol: options.ncol,
     nrow: options.nrow,
     scales: options.scales ?? 'fixed',
+    labeller: options.labeller,
   }
 }
 
 export interface FacetGridOptions {
   /** Scale behavior: 'fixed' (same for all), 'free' (independent), 'free_x', 'free_y' */
   scales?: 'fixed' | 'free' | 'free_x' | 'free_y'
-  /** Whether to draw row labels on the right (default: true) */
+  /** Move row/column strips: 'x' moves col strips to bottom, 'y' moves row strips to left */
   switch?: 'x' | 'y' | 'both' | null
-  /** Margins around panels (default: true) */
-  margins?: boolean
+  /** Labeller function for customizing strip labels */
+  labeller?: Labeller
 }
 
 /**
@@ -80,6 +120,8 @@ export function facet_grid(
     type: 'grid',
     vars: facets,
     scales: options.scales ?? 'fixed',
+    labeller: options.labeller,
+    switch: options.switch,
   }
 }
 
@@ -270,7 +312,37 @@ export interface PanelLayout {
   y: number
   width: number
   height: number
-  labelY: number  // Y position for strip label
+  labelY: number  // Y position for strip label (for wrap facets)
+}
+
+/**
+ * Layout options for panel calculation
+ */
+export interface PanelLayoutOptions {
+  /** Whether this is a grid facet with separate row/col strips */
+  isGrid?: boolean
+  /** Whether the grid has row variable */
+  hasRowVar?: boolean
+  /** Whether the grid has column variable */
+  hasColVar?: boolean
+}
+
+/**
+ * Grid strip layout information
+ */
+export interface GridStripLayout {
+  /** X position for each column strip (at top) */
+  colStripX: number[]
+  /** Y position for column strips */
+  colStripY: number
+  /** Width of column strips */
+  colStripWidth: number
+  /** Y position for each row strip (on right) */
+  rowStripY: number[]
+  /** X position for row strips */
+  rowStripX: number
+  /** Max width for row strip text */
+  rowStripWidth: number
 }
 
 export function calculatePanelLayouts(
@@ -279,20 +351,29 @@ export function calculatePanelLayouts(
   nrow: number,
   ncol: number,
   hasTitle: boolean,
-  margins: { top: number; right: number; bottom: number; left: number }
+  margins: { top: number; right: number; bottom: number; left: number },
+  options: PanelLayoutOptions = {}
 ): PanelLayout[] {
+  const { isGrid = false, hasRowVar = false, hasColVar = false } = options
+
   // Reserve space for overall title and margins
   const titleHeight = hasTitle ? 2 : 0
-  const availableWidth = totalWidth - margins.left - margins.right
-  const availableHeight = totalHeight - margins.top - margins.bottom - titleHeight
+
+  // For grid facets, we need space for column strips at top and row strips on right
+  const colStripHeight = isGrid && hasColVar ? 1 : 0
+  const rowStripWidth = isGrid && hasRowVar ? 10 : 0  // Space for row labels on right
+
+  const availableWidth = totalWidth - margins.left - margins.right - rowStripWidth
+  const availableHeight = totalHeight - margins.top - margins.bottom - titleHeight - colStripHeight
 
   // Calculate panel dimensions (including space for strip labels)
-  const stripHeight = 1  // Space for facet label above each panel
+  // For wrap facets, we still need per-panel strips
+  const stripHeight = isGrid ? 0 : 1  // For wrap: space for facet label above each panel
   const panelGapX = 2    // Gap between panels horizontally
   const panelGapY = 1    // Gap between panels vertically
 
   const totalGapX = (ncol - 1) * panelGapX
-  const totalGapY = (nrow - 1) * panelGapY + nrow * stripHeight
+  const totalGapY = (nrow - 1) * panelGapY + (isGrid ? 0 : nrow * stripHeight)
 
   const panelWidth = Math.floor((availableWidth - totalGapX) / ncol)
   const panelHeight = Math.floor((availableHeight - totalGapY) / nrow)
@@ -302,17 +383,68 @@ export function calculatePanelLayouts(
   for (let r = 0; r < nrow; r++) {
     for (let c = 0; c < ncol; c++) {
       const x = margins.left + c * (panelWidth + panelGapX)
-      const y = margins.top + titleHeight + r * (panelHeight + stripHeight + panelGapY)
+      const baseY = margins.top + titleHeight + colStripHeight
+      const y = baseY + r * (panelHeight + stripHeight + panelGapY)
 
       layouts.push({
         x,
-        y: y + stripHeight,  // Panel starts after strip label
+        y: isGrid ? y : y + stripHeight,  // Panel starts after strip label for wrap
         width: panelWidth,
         height: panelHeight,
-        labelY: y,  // Strip label at top of panel area
+        labelY: isGrid ? y : y,  // Strip label at top of panel area
       })
     }
   }
 
   return layouts
+}
+
+/**
+ * Calculate grid strip layout for facet_grid
+ */
+export function calculateGridStripLayout(
+  totalWidth: number,
+  totalHeight: number,
+  nrow: number,
+  ncol: number,
+  hasTitle: boolean,
+  margins: { top: number; right: number; bottom: number; left: number },
+  hasRowVar: boolean,
+  hasColVar: boolean
+): GridStripLayout {
+  const titleHeight = hasTitle ? 2 : 0
+  const colStripHeight = hasColVar ? 1 : 0
+  const rowStripWidth = hasRowVar ? 10 : 0
+
+  const availableWidth = totalWidth - margins.left - margins.right - rowStripWidth
+  const panelGapX = 2
+  const panelGapY = 1
+  const totalGapX = (ncol - 1) * panelGapX
+  const totalGapY = (nrow - 1) * panelGapY
+
+  const panelWidth = Math.floor((availableWidth - totalGapX) / ncol)
+  const panelHeight = Math.floor((totalHeight - margins.top - margins.bottom - titleHeight - colStripHeight - totalGapY) / nrow)
+
+  // Column strip positions (at top)
+  const colStripX: number[] = []
+  for (let c = 0; c < ncol; c++) {
+    colStripX.push(margins.left + c * (panelWidth + panelGapX))
+  }
+
+  // Row strip positions (on right)
+  const rowStripY: number[] = []
+  const baseY = margins.top + titleHeight + colStripHeight
+  for (let r = 0; r < nrow; r++) {
+    const panelY = baseY + r * (panelHeight + panelGapY)
+    rowStripY.push(panelY + Math.floor(panelHeight / 2))  // Centered vertically
+  }
+
+  return {
+    colStripX,
+    colStripY: margins.top + titleHeight,
+    colStripWidth: panelWidth,
+    rowStripY,
+    rowStripX: totalWidth - margins.right - rowStripWidth + 1,
+    rowStripWidth: rowStripWidth - 1,
+  }
 }

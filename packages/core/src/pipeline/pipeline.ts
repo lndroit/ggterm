@@ -16,8 +16,8 @@ import { stat_boxplot } from '../stats/boxplot'
 import { stat_density } from '../stats/density'
 import { stat_smooth } from '../stats/smooth'
 import { stat_summary } from '../stats/summary'
-import { computeFacetPanels, calculatePanelLayouts } from '../facets'
-import type { FacetPanel, PanelLayout } from '../facets'
+import { computeFacetPanels, calculatePanelLayouts, calculateGridStripLayout, label_value } from '../facets'
+import type { FacetPanel, PanelLayout, GridStripLayout, Labeller } from '../facets'
 
 /**
  * Layout configuration for plot elements
@@ -279,6 +279,18 @@ export function renderToCanvas(
 }
 
 /**
+ * Parse hex color to RGBA
+ */
+function parseHexColor(hex: string): RGBA {
+  if (!hex || hex.length < 4) return { r: 200, g: 200, b: 200, a: 1 }
+  const h = hex.startsWith('#') ? hex.slice(1) : hex
+  const r = parseInt(h.slice(0, 2), 16) || 200
+  const g = parseInt(h.slice(2, 4), 16) || 200
+  const b = parseInt(h.slice(4, 6), 16) || 200
+  return { r, g, b, a: 1 }
+}
+
+/**
  * Render a faceted plot specification to a canvas
  */
 function renderFacetedToCanvas(
@@ -308,19 +320,80 @@ function renderFacetedToCanvas(
   const hasLegend = spec.theme.legend.position !== 'none' && (!!spec.aes.color || !!spec.aes.size)
   const legendPosition = spec.theme.legend.position
 
-  // Calculate margins
+  // Determine if grid facet with row/col variables
+  const isGrid = facet.type === 'grid'
+  const vars = isGrid ? facet.vars as { rows?: string; cols?: string } : null
+  const hasRowVar = isGrid && !!vars?.rows
+  const hasColVar = isGrid && !!vars?.cols
+
+  // Calculate margins (account for row strips on right for grid)
   const margins = {
     top: hasTitle ? 2 : 1,
-    right: hasLegend && legendPosition === 'right' ? 15 : 1,
+    right: hasLegend && legendPosition === 'right' ? 15 : (hasRowVar ? 1 : 1),
     bottom: 3 + (hasLegend && legendPosition === 'bottom' ? 2 : 0),  // Space for x-axis label + legend
     left: 10,   // Space for y-axis
   }
 
-  // Calculate panel layouts
-  const panelLayouts = calculatePanelLayouts(width, height, nrow, ncol, hasTitle, margins)
+  // Calculate panel layouts with grid options
+  const panelLayouts = calculatePanelLayouts(width, height, nrow, ncol, hasTitle, margins, {
+    isGrid,
+    hasRowVar,
+    hasColVar,
+  })
 
   // Compute shared scales if needed
   const sharedScales = computeSharedScales(panels, spec, facet)
+
+  // Get labeller function
+  const labeller: Labeller = facet.labeller ?? label_value
+
+  // Get strip color from theme
+  const stripColor = parseHexColor(spec.theme.facet?.strip?.text ?? '#c8c8c8')
+
+  // For grid facets, render column strips at top and row strips on right
+  if (isGrid && (hasRowVar || hasColVar)) {
+    const gridStripLayout = calculateGridStripLayout(
+      width, height, nrow, ncol, hasTitle, margins, hasRowVar, hasColVar
+    )
+
+    // Get unique row and column values from panels
+    const rowValues: string[] = []
+    const colValues: string[] = []
+    for (const panel of panels) {
+      if (panel.rowValue && !rowValues.includes(panel.rowValue)) {
+        rowValues.push(panel.rowValue)
+      }
+      if (panel.colValue && !colValues.includes(panel.colValue)) {
+        colValues.push(panel.colValue)
+      }
+    }
+
+    // Render column strips at top
+    if (hasColVar && colValues.length > 0) {
+      for (let c = 0; c < colValues.length; c++) {
+        const labelText = labeller(colValues[c], vars?.cols)
+        const maxWidth = gridStripLayout.colStripWidth
+        const displayText = labelText.length > maxWidth
+          ? labelText.substring(0, maxWidth - 1) + '…'
+          : labelText
+        const x = gridStripLayout.colStripX[c] + Math.floor((maxWidth - displayText.length) / 2)
+        canvas.drawString(Math.max(0, x), gridStripLayout.colStripY, displayText, stripColor)
+      }
+    }
+
+    // Render row strips on right
+    if (hasRowVar && rowValues.length > 0) {
+      for (let r = 0; r < rowValues.length; r++) {
+        const labelText = labeller(rowValues[r], vars?.rows)
+        const maxWidth = gridStripLayout.rowStripWidth
+        const displayText = labelText.length > maxWidth
+          ? labelText.substring(0, maxWidth - 1) + '…'
+          : labelText
+        const x = gridStripLayout.rowStripX
+        canvas.drawString(x, gridStripLayout.rowStripY[r], displayText, stripColor)
+      }
+    }
+  }
 
   // Render each panel
   for (let i = 0; i < panels.length; i++) {
@@ -329,7 +402,7 @@ function renderFacetedToCanvas(
 
     if (!layout) continue
 
-    renderPanel(canvas, panel, layout, spec, facet, sharedScales)
+    renderPanel(canvas, panel, layout, spec, facet, sharedScales, nrow, ncol, labeller)
   }
 
   // Render shared axis labels
@@ -459,16 +532,24 @@ function renderPanel(
   layout: PanelLayout,
   spec: PlotSpec,
   facet: Facet,
-  sharedScales: Partial<ScaleContext>
+  sharedScales: Partial<ScaleContext>,
+  nrow: number = 1,
+  ncol: number = 1,
+  labeller?: Labeller
 ): void {
-  const stripColor: RGBA = { r: 200, g: 200, b: 200, a: 1 }
+  const stripColor = parseHexColor(spec.theme.facet?.strip?.text ?? '#c8c8c8')
 
-  // Draw strip label (facet title)
-  const labelText = panel.label.length > layout.width - 2
-    ? panel.label.substring(0, layout.width - 3) + '…'
-    : panel.label
-  const labelX = layout.x + Math.floor((layout.width - labelText.length) / 2)
-  canvas.drawString(labelX, layout.labelY, labelText, stripColor)
+  // For wrap facets, draw strip label above each panel
+  // For grid facets, strips are rendered separately at top/right
+  if (facet.type === 'wrap') {
+    const labelFn = labeller ?? label_value
+    const labelText = labelFn(panel.label, facet.vars as string)
+    const displayText = labelText.length > layout.width - 2
+      ? labelText.substring(0, layout.width - 3) + '…'
+      : labelText
+    const labelX = layout.x + Math.floor((layout.width - displayText.length) / 2)
+    canvas.drawString(labelX, layout.labelY, displayText, stripColor)
+  }
 
   // Create plot area for this panel
   const plotArea = {
@@ -517,7 +598,8 @@ function renderPanel(
   renderGridLines(canvas, scales, plotArea, spec.theme)
 
   // Render simplified axes (just ticks, labels handled differently for facets)
-  renderPanelAxes(canvas, scales, plotArea, panel.row, panel.col, spec.theme)
+  // Only render tick labels on outer panels to reduce clutter
+  renderPanelAxes(canvas, scales, plotArea, panel.row, panel.col, nrow, ncol, spec.theme)
 
   // Render geometry layers
   for (const geom of spec.geoms) {
@@ -528,27 +610,34 @@ function renderPanel(
 
 /**
  * Render axes for a facet panel (simplified version)
+ * Only renders tick labels on outer panels to reduce visual clutter
  */
 function renderPanelAxes(
   canvas: TerminalCanvas,
   scales: ScaleContext,
   plotArea: { x: number; y: number; width: number; height: number },
-  _row: number,
-  _col: number,
+  row: number,
+  col: number,
+  nrow: number,
+  ncol: number,
   _theme: any
 ): void {
   const axisColor: RGBA = { r: 180, g: 180, b: 180, a: 1 }
 
-  // Bottom axis line
+  // Determine if this is an outer panel
+  const isBottomRow = row === nrow - 1
+  const isLeftCol = col === 0
+
+  // Bottom axis line (always draw)
   canvas.drawHLine(plotArea.x, plotArea.y + plotArea.height, plotArea.width, '─', axisColor)
 
-  // Left axis line
+  // Left axis line (always draw)
   canvas.drawVLine(plotArea.x - 1, plotArea.y, plotArea.height, '│', axisColor)
 
   // Corner
   canvas.drawChar(plotArea.x - 1, plotArea.y + plotArea.height, '└', axisColor)
 
-  // X-axis ticks and labels
+  // X-axis ticks and labels (only on bottom row)
   if (scales.x.type === 'continuous') {
     const domain = scales.x.domain as [number, number]
     const ticks = calculateTicks(domain, Math.max(2, Math.floor(plotArea.width / 10)))
@@ -556,15 +645,19 @@ function renderPanelAxes(
     for (const tickValue of ticks) {
       const x = Math.round(scales.x.map(tickValue))
       if (x >= plotArea.x && x < plotArea.x + plotArea.width) {
+        // Always draw tick marks
         canvas.drawChar(x, plotArea.y + plotArea.height, '┬', axisColor)
-        const tickLabel = formatTick(tickValue)
-        const labelX = x - Math.floor(tickLabel.length / 2)
-        canvas.drawString(Math.max(plotArea.x, labelX), plotArea.y + plotArea.height + 1, tickLabel, axisColor)
+        // Only draw labels on bottom row
+        if (isBottomRow) {
+          const tickLabel = formatTick(tickValue)
+          const labelX = x - Math.floor(tickLabel.length / 2)
+          canvas.drawString(Math.max(plotArea.x, labelX), plotArea.y + plotArea.height + 1, tickLabel, axisColor)
+        }
       }
     }
   }
 
-  // Y-axis ticks and labels
+  // Y-axis ticks and labels (only on left column)
   if (scales.y.type === 'continuous') {
     const domain = scales.y.domain as [number, number]
     const ticks = calculateTicks(domain, Math.max(2, Math.floor(plotArea.height / 4)))
@@ -572,10 +665,14 @@ function renderPanelAxes(
     for (const tickValue of ticks) {
       const y = Math.round(scales.y.map(tickValue))
       if (y >= plotArea.y && y < plotArea.y + plotArea.height) {
+        // Always draw tick marks
         canvas.drawChar(plotArea.x - 1, y, '┤', axisColor)
-        const tickLabel = formatTick(tickValue)
-        const labelX = plotArea.x - tickLabel.length - 2
-        canvas.drawString(Math.max(0, labelX), y, tickLabel, axisColor)
+        // Only draw labels on left column
+        if (isLeftCol) {
+          const tickLabel = formatTick(tickValue)
+          const labelX = plotArea.x - tickLabel.length - 2
+          canvas.drawString(Math.max(0, labelX), y, tickLabel, axisColor)
+        }
       }
     }
   }

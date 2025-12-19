@@ -27,6 +27,12 @@ export function defaultTheme(): Theme {
       align: 'center',
       bold: true,
     },
+    facet: {
+      strip: {
+        text: '#c8c8c8',  // Light gray text
+        background: '',   // No background
+      },
+    },
   }
 }
 
@@ -52,6 +58,12 @@ export function themeMinimal(): Theme {
     title: {
       align: 'left',
       bold: false,
+    },
+    facet: {
+      strip: {
+        text: '#999999',
+        background: '',
+      },
     },
   }
 }
@@ -79,6 +91,12 @@ export function themeDark(): Theme {
       align: 'center',
       bold: true,
     },
+    facet: {
+      strip: {
+        text: '#ffffff',
+        background: '#333333',
+      },
+    },
   }
 }
 
@@ -105,6 +123,12 @@ export function themeClassic(): Theme {
       align: 'center',
       bold: true,
     },
+    facet: {
+      strip: {
+        text: '#c8c8c8',
+        background: '',
+      },
+    },
   }
 }
 
@@ -130,6 +154,12 @@ export function themeVoid(): Theme {
     title: {
       align: 'left',
       bold: false,
+    },
+    facet: {
+      strip: {
+        text: '#888888',
+        background: '',
+      },
     },
   }
 }

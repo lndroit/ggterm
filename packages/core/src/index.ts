@@ -185,12 +185,22 @@ export {
   facet_grid,
   computeFacetPanels,
   calculatePanelLayouts,
+  calculateGridStripLayout,
+  // Labeller functions
+  label_value,
+  label_both,
+  label_parsed,
+  label_wrap,
+  as_labeller,
 } from './facets'
 export type {
   FacetWrapOptions,
   FacetGridOptions,
   FacetPanel,
   PanelLayout,
+  PanelLayoutOptions,
+  GridStripLayout,
+  Labeller,
 } from './facets'
 
 // Themes

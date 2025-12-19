@@ -76,6 +76,9 @@ export interface Stat {
   compute(data: DataSource, aes: AestheticMapping): DataSource
 }
 
+// Labeller function type for facet strips
+export type Labeller = (value: string, variable?: string) => string
+
 // Facet interface
 export interface Facet {
   type: 'wrap' | 'grid'
@@ -83,6 +86,10 @@ export interface Facet {
   ncol?: number
   nrow?: number
   scales?: 'fixed' | 'free' | 'free_x' | 'free_y'
+  /** Labeller function for customizing strip labels */
+  labeller?: Labeller
+  /** Move row/column strips (for grid): 'x' moves col to bottom, 'y' moves row to left */
+  switch?: 'x' | 'y' | 'both' | null
 }
 
 // Theme structure
@@ -104,6 +111,14 @@ export interface Theme {
   title: {
     align: 'left' | 'center' | 'right'
     bold: boolean
+  }
+  facet: {
+    strip: {
+      /** Strip text color */
+      text: string
+      /** Strip background color (use empty string for no background) */
+      background: string
+    }
   }
 }
 
