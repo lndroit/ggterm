@@ -223,6 +223,101 @@ export function renderGeomPath(
 }
 
 /**
+ * Render geom_rug (marginal rug marks along axes)
+ *
+ * Draws tick marks at data positions along the plot edges to show
+ * marginal distributions.
+ */
+export function renderGeomRug(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  if (data.length === 0) return
+
+  const sides = (geom.params.sides as string) ?? 'bl'
+  const length = (geom.params.length as number) ?? 1
+  const outside = (geom.params.outside as boolean) ?? true
+
+  // Get plot boundaries
+  const xRange = scales.x.range as [number, number]
+  const yRange = scales.y.range as [number, number]
+  const plotLeft = Math.round(Math.min(xRange[0], xRange[1]))
+  const plotRight = Math.round(Math.max(xRange[0], xRange[1]))
+  const plotTop = Math.round(Math.min(yRange[0], yRange[1]))
+  const plotBottom = Math.round(Math.max(yRange[0], yRange[1]))
+
+  // Determine which sides to draw
+  const drawBottom = sides.includes('b')
+  const drawTop = sides.includes('t')
+  const drawLeft = sides.includes('l')
+  const drawRight = sides.includes('r')
+
+  // Draw rug marks for each data point
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const yVal = row[aes.y]
+
+    // Get color for this point
+    const color = getPointColor(row, aes, scales.color)
+
+    // X-axis rugs (bottom and/or top)
+    if (xVal !== null && xVal !== undefined) {
+      const cx = Math.round(scales.x.map(xVal))
+
+      // Only draw if within x bounds
+      if (cx >= plotLeft && cx <= plotRight) {
+        if (drawBottom) {
+          // Draw tick at bottom edge
+          const startY = outside ? plotBottom + 1 : plotBottom
+          const endY = startY + length - 1
+          for (let y = startY; y <= endY; y++) {
+            canvas.drawChar(cx, y, '│', color)
+          }
+        }
+
+        if (drawTop) {
+          // Draw tick at top edge
+          const startY = outside ? plotTop - length : plotTop
+          const endY = outside ? plotTop - 1 : plotTop + length - 1
+          for (let y = startY; y <= endY; y++) {
+            canvas.drawChar(cx, y, '│', color)
+          }
+        }
+      }
+    }
+
+    // Y-axis rugs (left and/or right)
+    if (yVal !== null && yVal !== undefined) {
+      const cy = Math.round(scales.y.map(yVal))
+
+      // Only draw if within y bounds
+      if (cy >= plotTop && cy <= plotBottom) {
+        if (drawLeft) {
+          // Draw tick at left edge
+          const startX = outside ? plotLeft - length : plotLeft
+          const endX = outside ? plotLeft - 1 : plotLeft + length - 1
+          for (let x = startX; x <= endX; x++) {
+            canvas.drawChar(x, cy, '─', color)
+          }
+        }
+
+        if (drawRight) {
+          // Draw tick at right edge
+          const startX = outside ? plotRight + 1 : plotRight
+          const endX = startX + length - 1
+          for (let x = startX; x <= endX; x++) {
+            canvas.drawChar(x, cy, '─', color)
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Render geom_step (stairstep lines)
  *
  * Draws lines that only move horizontally or vertically, creating
@@ -1613,6 +1708,9 @@ export function renderGeom(
       break
     case 'step':
       renderGeomStep(data, geom, aes, scales, canvas)
+      break
+    case 'rug':
+      renderGeomRug(data, geom, aes, scales, canvas)
       break
     case 'bar':
     case 'col':

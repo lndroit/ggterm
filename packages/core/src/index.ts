@@ -64,6 +64,7 @@ export {
   geom_curve,
   geom_smooth,
   geom_step,
+  geom_rug,
   // Phase 7: Extended Grammar
   geom_violin,
   geom_tile,
@@ -81,6 +82,7 @@ export {
 } from './geoms'
 export type {
   PathOptions,
+  RugOptions,
   SmoothOptions,
   StepOptions,
   ViolinOptions,
