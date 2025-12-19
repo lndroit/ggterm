@@ -8,7 +8,11 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "test": "bun test",
+    "test": "bun test packages/core && bun test packages/solid && bun test packages/svelte && bun test packages/vue",
+    "test:core": "bun test packages/core",
+    "test:solid": "bun test packages/solid",
+    "test:svelte": "bun test packages/svelte",
+    "test:vue": "bun test packages/vue",
     "lint": "eslint packages/*/src/**/*.ts",
     "lint:fix": "eslint packages/*/src/**/*.ts --fix",
     "format": "prettier --write 'packages/*/src/**/*.ts'",
