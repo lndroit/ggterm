@@ -35,6 +35,7 @@ import {
   scale_y2_continuous,
   coordFlip,
   coordFixed,
+  position_jitter,
   facet_wrap,
   facet_grid,
   label_both,
@@ -182,6 +183,22 @@ console.log(renderToString(
     .aes({ x: 'x', y: 'y', size: 'size' })
     .geom(geom_point())
     .labs({ title: 'Scatter with Size Mapping', x: 'X', y: 'Y', size: 'Size' })
+    .spec(),
+  { width: WIDTH, height: HEIGHT }
+))
+
+subheader('geom_point with position_jitter')
+// Create overplotted data (many points at same locations)
+const overplottedData = Array.from({ length: 50 }, (_, i) => ({
+  category: ['A', 'B', 'C'][i % 3],
+  value: Math.floor(i / 3) % 5 + 1,
+  group: ['X', 'Y'][i % 2],
+}))
+console.log(renderToString(
+  gg(overplottedData)
+    .aes({ x: 'category', y: 'value', color: 'group' })
+    .geom(geom_point({ position: position_jitter({ width: 0.3, height: 0.3 }) }))
+    .labs({ title: 'Jittered Points (avoiding overplot)', x: 'Category', y: 'Value', color: 'Group' })
     .spec(),
   { width: WIDTH, height: HEIGHT }
 ))
