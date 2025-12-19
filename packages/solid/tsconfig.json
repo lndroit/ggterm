@@ -16,7 +16,11 @@
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
     "noEmit": false,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ggterm/core": ["../core/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
