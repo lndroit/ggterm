@@ -29,6 +29,11 @@ const POINT_SHAPES: Record<string, string> = {
 }
 
 /**
+ * Size-based point characters (smallest to largest)
+ */
+const SIZE_CHARS: string[] = ['·', '•', '●', '⬤']
+
+/**
  * Get point shape character
  */
 function getPointShape(shape?: string): string {
@@ -61,7 +66,7 @@ export function renderGeomPoint(
   scales: ScaleContext,
   canvas: TerminalCanvas
 ): void {
-  const shape = getPointShape(geom.params.shape as string | undefined)
+  const defaultShape = getPointShape(geom.params.shape as string | undefined)
 
   for (const row of data) {
     const xVal = row[aes.x]
@@ -78,6 +83,16 @@ export function renderGeomPoint(
 
     // Get color
     const color = getPointColor(row, aes, scales.color)
+
+    // Determine point character based on size aesthetic
+    let shape = defaultShape
+    if (aes.size && scales.size) {
+      const sizeVal = row[aes.size]
+      if (sizeVal !== null && sizeVal !== undefined) {
+        const sizeIndex = scales.size.map(sizeVal)
+        shape = SIZE_CHARS[sizeIndex] ?? defaultShape
+      }
+    }
 
     // Draw the point
     canvas.drawPoint(Math.round(cx), Math.round(cy), color, shape)
@@ -188,6 +203,11 @@ export function renderGeomBar(
 ): void {
   const barWidth = Math.max(1, Math.floor((geom.params.width as number) ?? 1))
 
+  // Get plot area boundaries from scale range
+  // y range is [bottom, top] (inverted for canvas coordinates)
+  const plotBottom = Math.round(scales.y.range[0])
+  const plotTop = Math.round(scales.y.range[1])
+
   for (const row of data) {
     const xVal = row[aes.x]
     const yVal = row[aes.y]
@@ -198,13 +218,16 @@ export function renderGeomBar(
 
     const cx = Math.round(scales.x.map(xVal))
     const cy = Math.round(scales.y.map(yVal))
-    const baseline = Math.round(scales.y.map(0))
+
+    // Calculate baseline, clamped to plot area
+    let baseline = Math.round(scales.y.map(0))
+    baseline = Math.max(plotTop, Math.min(plotBottom, baseline))
 
     const color = getPointColor(row, aes, scales.color)
 
-    // Draw vertical bar from baseline to value
-    const top = Math.min(cy, baseline)
-    const bottom = Math.max(cy, baseline)
+    // Draw vertical bar from baseline to value, clamped to plot area
+    const top = Math.max(plotTop, Math.min(cy, baseline))
+    const bottom = Math.min(plotBottom, Math.max(cy, baseline))
 
     for (let y = top; y <= bottom; y++) {
       for (let dx = 0; dx < barWidth; dx++) {

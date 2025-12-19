@@ -167,7 +167,7 @@ export interface ScaleContext {
   x: ResolvedScale
   y: ResolvedScale
   color?: ResolvedColorScale
-  size?: ResolvedScale
+  size?: ResolvedSizeScale
 }
 
 /**
@@ -258,6 +258,54 @@ export function createResolvedContinuousColorScale(
 }
 
 /**
+ * Check if data field contains categorical (non-numeric) values
+ */
+function isCategoricalField(data: DataSource, field: string): boolean {
+  for (const row of data) {
+    const value = row[field]
+    if (value !== null && value !== undefined) {
+      if (typeof value === 'string' && isNaN(Number(value))) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Resolved size scale - maps values to size indices (0-3)
+ */
+export interface ResolvedSizeScale {
+  aesthetic: string
+  type: 'continuous'
+  domain: [number, number]
+  map(value: unknown): number  // Returns 0-3 size index
+}
+
+/**
+ * Create a resolved continuous size scale
+ */
+export function createResolvedSizeScale(
+  domain: [number, number]
+): ResolvedSizeScale {
+  const [min, max] = domain
+  const span = max - min
+
+  return {
+    aesthetic: 'size',
+    type: 'continuous',
+    domain,
+    map(value: unknown): number {
+      const num = Number(value)
+      if (isNaN(num)) return 1  // Default to medium size
+      // Map to 0-3 size index
+      const t = Math.max(0, Math.min(1, (num - min) / span))
+      return Math.floor(t * 3.99)  // 0, 1, 2, or 3
+    },
+  }
+}
+
+/**
  * Build scale context from data and aesthetic mapping
  */
 export function buildScaleContext(
@@ -274,20 +322,31 @@ export function buildScaleContext(
   //   (s) => s.aesthetic === 'color' || s.aesthetic === 'fill'
   // )
 
-  // Infer x domain
-  const xDomain = userXScale?.domain as [number, number] | undefined ??
-    expandDomain(inferContinuousDomain(data, aes.x))
+  // Determine if x is categorical or continuous
+  const xIsCategorical = isCategoricalField(data, aes.x)
 
-  // Infer y domain
+  // Create x scale
+  let x: ResolvedScale
+  if (xIsCategorical) {
+    const xDomain = inferDiscreteDomain(data, aes.x)
+    x = createResolvedDiscreteScale(
+      'x',
+      xDomain,
+      [plotArea.x, plotArea.x + plotArea.width - 1]
+    )
+  } else {
+    const xDomain = userXScale?.domain as [number, number] | undefined ??
+      expandDomain(inferContinuousDomain(data, aes.x))
+    x = createResolvedContinuousScale(
+      'x',
+      xDomain,
+      [plotArea.x, plotArea.x + plotArea.width - 1]
+    )
+  }
+
+  // Infer y domain (always continuous for now)
   const yDomain = userYScale?.domain as [number, number] | undefined ??
     expandDomain(inferContinuousDomain(data, aes.y))
-
-  // Create x scale (maps to horizontal canvas range)
-  const x = createResolvedContinuousScale(
-    'x',
-    xDomain,
-    [plotArea.x, plotArea.x + plotArea.width - 1]
-  )
 
   // Create y scale (maps to vertical canvas range, inverted because y=0 is top)
   const y = createResolvedContinuousScale(
@@ -302,6 +361,12 @@ export function buildScaleContext(
   if (aes.color) {
     const colorDomain = inferDiscreteDomain(data, aes.color)
     context.color = createResolvedDiscreteColorScale(colorDomain)
+  }
+
+  // Handle size aesthetic if present
+  if (aes.size) {
+    const sizeDomain = inferContinuousDomain(data, aes.size)
+    context.size = createResolvedSizeScale(sizeDomain)
   }
 
   return context

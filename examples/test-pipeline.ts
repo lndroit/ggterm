@@ -99,4 +99,67 @@ const refPlot = gg(refData)
 console.log(refPlot.render({ width: 50, height: 15 }))
 console.log('\n')
 
+// Test 5: Categorical x-axis (bar chart style)
+console.log('=== Test 5: Categorical X-Axis ===\n')
+
+import { geom_bar } from '../packages/core/src/geoms'
+
+const barData = [
+  { category: 'Apple', count: 25 },
+  { category: 'Banana', count: 40 },
+  { category: 'Cherry', count: 15 },
+  { category: 'Date', count: 30 },
+  { category: 'Elder', count: 20 },
+]
+
+const barPlot = gg(barData)
+  .aes({ x: 'category', y: 'count' })
+  .geom(geom_bar())
+  .labs({ title: 'Fruit Sales', x: 'Fruit', y: 'Count' })
+
+console.log(barPlot.render({ width: 55, height: 15 }))
+console.log('\n')
+
+// Test 6: Size aesthetic
+console.log('=== Test 6: Size Aesthetic ===\n')
+
+const sizeData = [
+  { x: 1, y: 2, value: 10 },
+  { x: 2, y: 3, value: 30 },
+  { x: 3, y: 1.5, value: 50 },
+  { x: 4, y: 4, value: 20 },
+  { x: 5, y: 3.5, value: 80 },
+  { x: 6, y: 2.5, value: 100 },
+  { x: 7, y: 5, value: 5 },
+  { x: 8, y: 4.5, value: 60 },
+]
+
+const sizePlot = gg(sizeData)
+  .aes({ x: 'x', y: 'y', size: 'value' })
+  .geom(geom_point())
+  .labs({ title: 'Point Size by Value', x: 'X', y: 'Y', size: 'Value' })
+
+console.log(sizePlot.render({ width: 55, height: 15 }))
+console.log('\n')
+
+// Test 7: Size + Color aesthetics combined
+console.log('=== Test 7: Size + Color Combined ===\n')
+
+const combinedData = [
+  { x: 1, y: 2, value: 10, cat: 'A' },
+  { x: 2, y: 3, value: 50, cat: 'A' },
+  { x: 3, y: 1.5, value: 80, cat: 'B' },
+  { x: 4, y: 4, value: 20, cat: 'B' },
+  { x: 5, y: 3.5, value: 90, cat: 'C' },
+  { x: 6, y: 2.5, value: 40, cat: 'C' },
+]
+
+const combinedPlot = gg(combinedData)
+  .aes({ x: 'x', y: 'y', size: 'value', color: 'cat' })
+  .geom(geom_point())
+  .labs({ title: 'Color + Size', x: 'X', y: 'Y' })
+
+console.log(combinedPlot.render({ width: 60, height: 15 }))
+console.log('\n')
+
 console.log('=== All tests completed ===')

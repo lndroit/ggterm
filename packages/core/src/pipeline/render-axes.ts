@@ -21,29 +21,46 @@ export interface AxisConfig {
  */
 export function calculateTicks(
   domain: [number, number],
-  maxTicks: number = 5
+  targetTicks: number = 5
 ): number[] {
   const [min, max] = domain
   const range = max - min
 
+  if (range === 0) return [min]
+
   // Calculate a nice step size
-  const rawStep = range / maxTicks
+  const rawStep = range / Math.max(1, targetTicks - 1)
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
   const normalized = rawStep / magnitude
 
+  // Choose a "nice" step that's close to the raw step
   let niceStep: number
-  if (normalized <= 1) niceStep = 1
-  else if (normalized <= 2) niceStep = 2
-  else if (normalized <= 5) niceStep = 5
+  if (normalized <= 1.5) niceStep = 1
+  else if (normalized <= 3) niceStep = 2
+  else if (normalized <= 7) niceStep = 5
   else niceStep = 10
 
   niceStep *= magnitude
 
-  // Generate ticks
+  // Generate ticks starting from a nice round number
   const ticks: number[] = []
-  const start = Math.ceil(min / niceStep) * niceStep
-  for (let tick = start; tick <= max; tick += niceStep) {
-    ticks.push(tick)
+  const start = Math.floor(min / niceStep) * niceStep
+
+  for (let tick = start; tick <= max + niceStep * 0.001; tick += niceStep) {
+    // Only include ticks within or very close to the domain
+    if (tick >= min - niceStep * 0.001 && tick <= max + niceStep * 0.001) {
+      // Round to avoid floating point errors
+      const roundedTick = Math.round(tick * 1e10) / 1e10
+      ticks.push(roundedTick)
+    }
+  }
+
+  // Ensure we have at least min and max if range is small
+  if (ticks.length === 0) {
+    ticks.push(min, max)
+  } else if (ticks.length === 1) {
+    if (ticks[0] > min) ticks.unshift(min)
+    if (ticks[0] < max) ticks.push(max)
   }
 
   return ticks
@@ -91,7 +108,9 @@ export function renderBottomAxis(
   // Calculate and draw ticks
   if (scale.type === 'continuous') {
     const domain = scale.domain as [number, number]
-    const ticks = calculateTicks(domain, Math.min(8, Math.floor((xEnd - xStart) / 10)))
+    // Request more ticks - aim for one every ~8 characters
+    const targetTicks = Math.max(3, Math.floor((xEnd - xStart) / 8))
+    const ticks = calculateTicks(domain, targetTicks)
 
     for (const tickValue of ticks) {
       const x = Math.round(scale.toCanvas(scale.normalize(tickValue)))
@@ -105,9 +124,27 @@ export function renderBottomAxis(
         canvas.drawString(Math.max(xStart, labelX), y + 1, tickLabel, axisColor)
       }
     }
+  } else if (scale.type === 'discrete') {
+    // Discrete scale - show category labels
+    const domain = scale.domain as string[]
+    for (const category of domain) {
+      const x = Math.round(scale.map(category))
+      if (x >= xStart && x <= xEnd) {
+        // Tick mark
+        canvas.drawChar(x, y, '┬', axisColor)
+
+        // Category label (truncate if needed)
+        const maxLen = Math.floor((xEnd - xStart) / domain.length) - 1
+        const tickLabel = category.length > maxLen
+          ? category.substring(0, Math.max(3, maxLen))
+          : category
+        const labelX = x - Math.floor(tickLabel.length / 2)
+        canvas.drawString(Math.max(xStart, labelX), y + 1, tickLabel, axisColor)
+      }
+    }
   }
 
-  // Draw axis label
+  // Draw axis label centered below tick labels
   if (label) {
     const labelX = xStart + Math.floor((xEnd - xStart - label.length) / 2)
     canvas.drawString(labelX, y + 2, label, axisColor)
@@ -136,7 +173,9 @@ export function renderLeftAxis(
   // Calculate and draw ticks
   if (scale.type === 'continuous') {
     const domain = scale.domain as [number, number]
-    const ticks = calculateTicks(domain, Math.min(6, Math.floor((bottom - top) / 3)))
+    // Request more ticks - aim for one every ~3 rows
+    const targetTicks = Math.max(3, Math.floor((bottom - top) / 3))
+    const ticks = calculateTicks(domain, targetTicks)
 
     for (const tickValue of ticks) {
       const y = Math.round(scale.toCanvas(scale.normalize(tickValue)))
@@ -152,13 +191,16 @@ export function renderLeftAxis(
     }
   }
 
-  // Draw axis label (rotated/vertical would be ideal, but we'll put it at the top)
+  // Draw axis label horizontally in the left margin
   if (label) {
-    // Draw label vertically by writing each character
-    const startY = top + Math.floor((bottom - top - label.length) / 2)
-    for (let i = 0; i < label.length; i++) {
-      canvas.drawChar(0, startY + i, label[i], axisColor)
-    }
+    // Truncate label if too long for margin
+    const maxLabelLen = x - 1
+    const displayLabel = label.length > maxLabelLen
+      ? label.substring(0, maxLabelLen)
+      : label
+    // Center vertically
+    const labelY = top + Math.floor((bottom - top) / 2)
+    canvas.drawString(0, labelY, displayLabel, axisColor)
   }
 }
 
@@ -201,6 +243,64 @@ export function renderAxes(
     b: 180,
     a: 1,
   })
+}
+
+/**
+ * Render grid lines for the plot
+ */
+export function renderGridLines(
+  canvas: TerminalCanvas,
+  scales: { x: ResolvedScale; y: ResolvedScale },
+  plotArea: { x: number; y: number; width: number; height: number },
+  theme: Theme
+): void {
+  const gridChar = theme.panel.grid.major
+  if (!gridChar) return
+
+  const gridColor: RGBA = { r: 80, g: 80, b: 80, a: 1 }
+
+  // Horizontal grid lines (at y tick positions)
+  if (scales.y.type === 'continuous') {
+    const yDomain = scales.y.domain as [number, number]
+    const targetTicks = Math.max(3, Math.floor(plotArea.height / 3))
+    const yTicks = calculateTicks(yDomain, targetTicks)
+
+    for (const tickValue of yTicks) {
+      const y = Math.round(scales.y.toCanvas(scales.y.normalize(tickValue)))
+      if (y >= plotArea.y && y < plotArea.y + plotArea.height) {
+        for (let x = plotArea.x; x < plotArea.x + plotArea.width; x++) {
+          canvas.drawChar(x, y, gridChar, gridColor)
+        }
+      }
+    }
+  }
+
+  // Vertical grid lines (at x tick positions)
+  if (scales.x.type === 'continuous') {
+    const xDomain = scales.x.domain as [number, number]
+    const targetTicks = Math.max(3, Math.floor(plotArea.width / 8))
+    const xTicks = calculateTicks(xDomain, targetTicks)
+
+    for (const tickValue of xTicks) {
+      const x = Math.round(scales.x.toCanvas(scales.x.normalize(tickValue)))
+      if (x >= plotArea.x && x < plotArea.x + plotArea.width) {
+        for (let y = plotArea.y; y < plotArea.y + plotArea.height; y++) {
+          canvas.drawChar(x, y, gridChar, gridColor)
+        }
+      }
+    }
+  } else if (scales.x.type === 'discrete') {
+    // For discrete scales, draw grid lines at category positions
+    const domain = scales.x.domain as string[]
+    for (const category of domain) {
+      const x = Math.round(scales.x.map(category))
+      if (x >= plotArea.x && x < plotArea.x + plotArea.width) {
+        for (let y = plotArea.y; y < plotArea.y + plotArea.height; y++) {
+          canvas.drawChar(x, y, gridChar, gridColor)
+        }
+      }
+    }
+  }
 }
 
 /**

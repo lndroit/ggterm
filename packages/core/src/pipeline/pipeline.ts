@@ -8,7 +8,7 @@ import type { PlotSpec, RenderOptions } from '../types'
 import { TerminalCanvas, createCanvas } from '../canvas/canvas'
 import { buildScaleContext } from './scales'
 import { renderGeom } from './render-geoms'
-import { renderAxes, renderTitle, renderLegend } from './render-axes'
+import { renderAxes, renderTitle, renderLegend, renderGridLines } from './render-axes'
 
 /**
  * Layout configuration for plot elements
@@ -112,6 +112,9 @@ export function renderToCanvas(
   if (spec.labels.title) {
     renderTitle(canvas, spec.labels.title, layout.width, spec.theme)
   }
+
+  // Render grid lines (behind data)
+  renderGridLines(canvas, scales, layout.plotArea, spec.theme)
 
   // Render axes
   renderAxes(canvas, scales, layout.plotArea, spec.labels, spec.theme)
