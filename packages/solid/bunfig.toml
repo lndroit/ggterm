@@ -1,6 +1,0 @@
-[test]
-# Use browser target for Solid.js to get client-side signal behavior
-preload = []
-
-[test.browser]
-enabled = false
