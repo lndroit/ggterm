@@ -83,10 +83,20 @@ bun add @ggterm/core @ggterm/opentui
 
 ## Documentation
 
-- [Architecture](./docs/ARCHITECTURE.md) - Technical design
+- [Quick Start](./docs/QUICKSTART.md) - Get started in 5 minutes
+- [Gallery](./docs/GALLERY.md) - Visual examples of all plot types
 - [API Reference](./docs/API.md) - Full API documentation
+- [Architecture](./docs/ARCHITECTURE.md) - Technical design
 - [Roadmap](./docs/ROADMAP.md) - Development phases
-- [Contributing](./CONTRIBUTING.md) - How to contribute
+
+### Migration Guides
+
+- [From ggplot2](./docs/MIGRATION-GGPLOT2.md) - For R users
+- [From Vega-Lite](./docs/MIGRATION-VEGALITE.md) - For Vega-Lite users
+
+### Contributing
+
+- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 
 ## Prior Art
 

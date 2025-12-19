@@ -1,0 +1,608 @@
+# ggterm Plot Gallery
+
+A visual guide to all plot types available in ggterm.
+
+## Table of Contents
+
+- [Scatter Plots](#scatter-plots)
+- [Line Charts](#line-charts)
+- [Bar Charts](#bar-charts)
+- [Histograms](#histograms)
+- [Area Charts](#area-charts)
+- [Box Plots](#box-plots)
+- [Heatmaps](#heatmaps)
+- [Error Bars](#error-bars)
+- [Faceted Plots](#faceted-plots)
+- [Annotated Plots](#annotated-plots)
+- [Streaming Plots](#streaming-plots)
+
+---
+
+## Scatter Plots
+
+Basic scatter plots for visualizing relationships between two continuous variables.
+
+### Basic Scatter Plot
+
+```typescript
+import { gg, geom_point } from '@ggterm/core'
+
+const data = [
+  { x: 1, y: 2 }, { x: 2, y: 4 }, { x: 3, y: 3 },
+  { x: 4, y: 7 }, { x: 5, y: 5 }, { x: 6, y: 8 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .labs({ title: 'Basic Scatter Plot' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+**Output:**
+```
+                    Basic Scatter Plot
+
+    8 ┤····································●··············
+      │··················································
+    6 ┤···················●······························
+      │····························●······················
+    4 ┤·········●·········································
+      │··················································
+    2 ┤·●·····················································
+      └┬─────────┬─────────┬─────────┬─────────┬─────────┬
+       1         2         3         4         5         6
+```
+
+### Colored Scatter Plot
+
+```typescript
+import { gg, geom_point, scale_color_discrete } from '@ggterm/core'
+
+const data = [
+  { x: 1, y: 2, group: 'A' }, { x: 2, y: 4, group: 'B' },
+  { x: 3, y: 3, group: 'A' }, { x: 4, y: 7, group: 'B' },
+  { x: 5, y: 5, group: 'A' }, { x: 6, y: 8, group: 'B' }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', color: 'group' })
+  .geom(geom_point({ size: 2 }))
+  .labs({ title: 'Scatter by Group' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Bubble Chart (Size Mapping)
+
+```typescript
+import { gg, geom_point, scale_size_continuous } from '@ggterm/core'
+
+const data = [
+  { x: 10, y: 20, value: 100 },
+  { x: 30, y: 40, value: 250 },
+  { x: 50, y: 30, value: 50 },
+  { x: 70, y: 60, value: 400 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', size: 'value' })
+  .geom(geom_point())
+  .scale(scale_size_continuous({ range: [1, 4] }))
+  .labs({ title: 'Bubble Chart' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Line Charts
+
+Connect data points to show trends over time or ordered categories.
+
+### Basic Line Chart
+
+```typescript
+import { gg, geom_line } from '@ggterm/core'
+
+const data = [
+  { time: 1, value: 10 }, { time: 2, value: 25 },
+  { time: 3, value: 18 }, { time: 4, value: 35 },
+  { time: 5, value: 28 }, { time: 6, value: 42 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value' })
+  .geom(geom_line())
+  .labs({ title: 'Time Series', x: 'Time', y: 'Value' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Multi-Series Line Chart
+
+```typescript
+import { gg, geom_line, scale_color_discrete } from '@ggterm/core'
+
+const data = [
+  { time: 1, value: 10, series: 'A' }, { time: 1, value: 15, series: 'B' },
+  { time: 2, value: 25, series: 'A' }, { time: 2, value: 20, series: 'B' },
+  { time: 3, value: 18, series: 'A' }, { time: 3, value: 30, series: 'B' },
+  { time: 4, value: 35, series: 'A' }, { time: 4, value: 28, series: 'B' }
+]
+
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value', color: 'series', group: 'series' })
+  .geom(geom_line())
+  .labs({ title: 'Multi-Series' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Line with Points
+
+```typescript
+import { gg, geom_line, geom_point } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value' })
+  .geom(geom_line())
+  .geom(geom_point({ size: 2 }))
+  .labs({ title: 'Line with Points' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Bar Charts
+
+Display categorical data with rectangular bars.
+
+### Vertical Bar Chart
+
+```typescript
+import { gg, geom_bar } from '@ggterm/core'
+
+const data = [
+  { category: 'A', value: 25 },
+  { category: 'B', value: 40 },
+  { category: 'C', value: 30 },
+  { category: 'D', value: 55 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'category', y: 'value' })
+  .geom(geom_bar({ stat: 'identity' }))
+  .labs({ title: 'Bar Chart' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+**Output:**
+```
+                        Bar Chart
+
+    55 ┤·······························████████████████···
+       │·······························█              █···
+    45 ┤·······························█              █···
+       │···············████████████████               █···
+    35 ┤···············█              █               █···
+       │···············█              █   ████████████████
+    25 ┤████████████████              █   █
+       └┬──────────────┬──────────────┬───────────────┬───
+        A              B              C               D
+```
+
+### Horizontal Bar Chart
+
+```typescript
+import { gg, geom_bar, coordFlip } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'category', y: 'value' })
+  .geom(geom_bar({ stat: 'identity' }))
+  .coord(coordFlip())
+  .labs({ title: 'Horizontal Bars' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Grouped Bar Chart
+
+```typescript
+import { gg, geom_bar, scale_fill_discrete } from '@ggterm/core'
+
+const data = [
+  { category: 'Q1', value: 100, year: '2023' },
+  { category: 'Q1', value: 120, year: '2024' },
+  { category: 'Q2', value: 150, year: '2023' },
+  { category: 'Q2', value: 180, year: '2024' }
+]
+
+const plot = gg(data)
+  .aes({ x: 'category', y: 'value', fill: 'year' })
+  .geom(geom_bar({ stat: 'identity', position: 'dodge' }))
+  .labs({ title: 'Grouped Bars' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Histograms
+
+Show the distribution of a continuous variable.
+
+### Basic Histogram
+
+```typescript
+import { gg, geom_histogram } from '@ggterm/core'
+
+// Generate sample data
+const data = Array.from({ length: 100 }, () => ({
+  value: Math.random() * 100
+}))
+
+const plot = gg(data)
+  .aes({ x: 'value' })
+  .geom(geom_histogram({ bins: 20 }))
+  .labs({ title: 'Distribution', x: 'Value', y: 'Count' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Overlapping Histograms
+
+```typescript
+import { gg, geom_histogram, scale_fill_discrete } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'value', fill: 'group' })
+  .geom(geom_histogram({ bins: 15, alpha: 0.5, position: 'identity' }))
+  .labs({ title: 'Overlapping Distributions' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Area Charts
+
+Filled areas under lines, useful for showing volume or cumulative data.
+
+### Basic Area Chart
+
+```typescript
+import { gg, geom_area } from '@ggterm/core'
+
+const data = [
+  { time: 1, value: 10 }, { time: 2, value: 25 },
+  { time: 3, value: 18 }, { time: 4, value: 35 },
+  { time: 5, value: 28 }, { time: 6, value: 42 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value' })
+  .geom(geom_area({ alpha: 0.7 }))
+  .labs({ title: 'Area Chart' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Stacked Area Chart
+
+```typescript
+import { gg, geom_area, scale_fill_discrete } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value', fill: 'series' })
+  .geom(geom_area({ position: 'stack' }))
+  .labs({ title: 'Stacked Areas' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Ribbon (Confidence Band)
+
+```typescript
+import { gg, geom_line, geom_ribbon } from '@ggterm/core'
+
+const data = [
+  { x: 1, y: 10, ymin: 8, ymax: 12 },
+  { x: 2, y: 15, ymin: 12, ymax: 18 },
+  { x: 3, y: 13, ymin: 10, ymax: 16 },
+  { x: 4, y: 20, ymin: 16, ymax: 24 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', ymin: 'ymin', ymax: 'ymax' })
+  .geom(geom_ribbon({ alpha: 0.3 }))
+  .geom(geom_line())
+  .labs({ title: 'Line with Confidence Band' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Box Plots
+
+Show distribution summary statistics.
+
+### Basic Box Plot
+
+```typescript
+import { gg, geom_boxplot } from '@ggterm/core'
+
+const data = [
+  { group: 'A', value: 10 }, { group: 'A', value: 15 },
+  { group: 'A', value: 12 }, { group: 'A', value: 18 },
+  { group: 'B', value: 20 }, { group: 'B', value: 25 },
+  { group: 'B', value: 22 }, { group: 'B', value: 30 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'group', y: 'value' })
+  .geom(geom_boxplot())
+  .labs({ title: 'Box Plot Comparison' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+**Output:**
+```
+                    Box Plot Comparison
+
+    30 ┤·····················────┬────························
+       │·····················│  │  │·························
+    25 ┤·····················├──┼──┤·························
+       │·····················│  │  │·························
+    20 ┤·····················────┴────························
+       │·····························────┬────················
+    15 ┤·········────┬────···············│  │  │··············
+       │·········│  │  │·················├──┼──┤··············
+    10 ┤·········────┴────···············────┴────············
+       └┬────────────────────────┬────────────────────────┬───
+        A                        B
+```
+
+---
+
+## Heatmaps
+
+Display matrix data using color intensity.
+
+### Basic Heatmap
+
+```typescript
+import { gg, geom_tile, scale_fill_viridis } from '@ggterm/core'
+
+const data = []
+for (let x = 0; x < 5; x++) {
+  for (let y = 0; y < 5; y++) {
+    data.push({ x, y, value: Math.random() })
+  }
+}
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', fill: 'value' })
+  .geom(geom_tile())
+  .scale(scale_fill_viridis())
+  .labs({ title: 'Heatmap' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Correlation Matrix
+
+```typescript
+import { gg, geom_tile, scale_fill_viridis } from '@ggterm/core'
+
+const variables = ['A', 'B', 'C', 'D']
+const data = []
+
+for (let i = 0; i < variables.length; i++) {
+  for (let j = 0; j < variables.length; j++) {
+    const value = i === j ? 1 : Math.random() * 2 - 1
+    data.push({ x: i, y: j, value })
+  }
+}
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', fill: 'value' })
+  .geom(geom_tile({ width: 1, height: 1 }))
+  .scale(scale_fill_viridis())
+  .labs({ title: 'Correlation Matrix' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Error Bars
+
+Show uncertainty in measurements.
+
+### Point with Error Bars
+
+```typescript
+import { gg, geom_point, geom_errorbar } from '@ggterm/core'
+
+const data = [
+  { x: 1, y: 10, ymin: 8, ymax: 12 },
+  { x: 2, y: 15, ymin: 12, ymax: 18 },
+  { x: 3, y: 25, ymin: 20, ymax: 30 },
+  { x: 4, y: 35, ymin: 28, ymax: 42 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', ymin: 'ymin', ymax: 'ymax' })
+  .geom(geom_errorbar({ width: 0.2 }))
+  .geom(geom_point({ size: 2 }))
+  .labs({ title: 'Measurements with Error' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Horizontal Error Bars
+
+```typescript
+import { gg, geom_point, geom_errorbarh } from '@ggterm/core'
+
+const data = [
+  { x: 10, y: 1, xmin: 8, xmax: 12 },
+  { x: 15, y: 2, xmin: 12, xmax: 18 },
+  { x: 25, y: 3, xmin: 20, xmax: 30 }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y', xmin: 'xmin', xmax: 'xmax' })
+  .geom(geom_errorbarh({ height: 0.2 }))
+  .geom(geom_point({ size: 2 }))
+  .labs({ title: 'Horizontal Error Bars' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Faceted Plots
+
+Small multiples for comparing subgroups.
+
+### Facet Wrap
+
+```typescript
+import { gg, geom_point, facet_wrap } from '@ggterm/core'
+
+const data = [
+  { x: 1, y: 2, category: 'A' }, { x: 2, y: 4, category: 'A' },
+  { x: 1, y: 3, category: 'B' }, { x: 2, y: 5, category: 'B' },
+  { x: 1, y: 1, category: 'C' }, { x: 2, y: 3, category: 'C' }
+]
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .facet(facet_wrap('category', { ncol: 3 }))
+  .labs({ title: 'Faceted by Category' })
+
+console.log(plot.render({ width: 80, height: 20 }))
+```
+
+### Facet Grid
+
+```typescript
+import { gg, geom_point, facet_grid } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .facet(facet_grid({ rows: 'row_var', cols: 'col_var' }))
+  .labs({ title: 'Grid Facets' })
+
+console.log(plot.render({ width: 80, height: 24 }))
+```
+
+---
+
+## Annotated Plots
+
+Add context with text, lines, and shapes.
+
+### Reference Lines
+
+```typescript
+import { gg, geom_point, geom_hline, geom_vline } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .geom(geom_hline({ yintercept: 50, linetype: 'dashed', color: 'red' }))
+  .geom(geom_vline({ xintercept: 0, linetype: 'dashed', color: 'blue' }))
+  .labs({ title: 'Plot with Reference Lines' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+### Text Annotations
+
+```typescript
+import { gg, geom_point, annotate } from '@ggterm/core'
+
+const plot = gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .geom(annotate('text', { x: 5, y: 50, label: 'Important!' }))
+  .geom(annotate('rect', { xmin: 2, xmax: 4, ymin: 20, ymax: 40, alpha: 0.2 }))
+  .labs({ title: 'Annotated Plot' })
+
+console.log(plot.render({ width: 60, height: 15 }))
+```
+
+---
+
+## Streaming Plots
+
+Real-time data visualization.
+
+### Live Time Series
+
+```typescript
+import { gg, geom_line, geom_point } from '@ggterm/core'
+
+const data = []
+const plot = gg(data)
+  .aes({ x: 'time', y: 'value' })
+  .geom(geom_line())
+  .geom(geom_point())
+  .labs({ title: 'Live Data' })
+
+// Simulate streaming
+setInterval(() => {
+  data.push({
+    time: Date.now(),
+    value: Math.random() * 100
+  })
+
+  // Keep last 50 points
+  if (data.length > 50) data.shift()
+
+  console.clear()
+  console.log(plot.render({ width: 80, height: 20 }))
+}, 200)
+```
+
+---
+
+## Running Examples
+
+All examples can be run from the `examples/` directory:
+
+```bash
+# Basic examples
+npx tsx examples/basic.ts
+
+# Interactive demo
+npx tsx examples/interactive-demo.ts
+
+# Streaming demo
+npx tsx examples/streaming-demo.ts
+
+# Extended grammar demo (Phase 7 features)
+npx tsx examples/extended-grammar-demo.ts
+
+# Dashboard demo
+npx tsx examples/dashboard-demo.ts
+```
+
+---
+
+## See Also
+
+- [API Reference](./API.md) - Full API documentation
+- [Architecture](./ARCHITECTURE.md) - Technical design
+- [Migration from ggplot2](./MIGRATION-GGPLOT2.md) - R users guide
+- [Migration from Vega-Lite](./MIGRATION-VEGALITE.md) - Vega-Lite users guide

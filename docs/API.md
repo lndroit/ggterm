@@ -548,11 +548,431 @@ stream.on('data', (point) => {
 
 ---
 
+## Extended Geometries (Phase 7)
+
+### geom_boxplot()
+
+Box and whisker plots for distribution summaries.
+
+```typescript
+import { geom_boxplot } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'group', y: 'value' })
+  .geom(geom_boxplot())
+```
+
+### geom_violin()
+
+Violin plots showing distribution shape.
+
+```typescript
+import { geom_violin } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'group', y: 'value' })
+  .geom(geom_violin({ width: 0.8 }))
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `width` | number | 0.8 | Violin width |
+| `draw_quantiles` | number[] | [0.25, 0.5, 0.75] | Quantile lines to draw |
+| `scale` | string | 'area' | 'area', 'count', or 'width' |
+| `trim` | boolean | true | Trim to data range |
+
+### geom_tile()
+
+Rectangular tiles for heatmaps.
+
+```typescript
+import { geom_tile, scale_fill_viridis } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'x', y: 'y', fill: 'value' })
+  .geom(geom_tile({ width: 1, height: 1 }))
+  .scale(scale_fill_viridis())
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `width` | number | auto | Tile width |
+| `height` | number | auto | Tile height |
+| `alpha` | number | 1 | Opacity |
+
+### geom_contour()
+
+Contour lines for 2D density.
+
+```typescript
+import { geom_contour } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'x', y: 'y', z: 'z' })
+  .geom(geom_contour({ bins: 10 }))
+```
+
+### geom_errorbar() / geom_errorbarh()
+
+Error bars for uncertainty visualization.
+
+```typescript
+import { geom_errorbar, geom_point } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'x', y: 'y', ymin: 'lower', ymax: 'upper' })
+  .geom(geom_errorbar({ width: 0.2 }))
+  .geom(geom_point())
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `width` | number | 0.5 | Cap width |
+| `alpha` | number | 1 | Opacity |
+
+### geom_rect()
+
+Rectangular regions.
+
+```typescript
+import { geom_rect } from '@ggterm/core'
+
+gg(data)
+  .aes({ xmin: 'x1', xmax: 'x2', ymin: 'y1', ymax: 'y2' })
+  .geom(geom_rect({ alpha: 0.3 }))
+```
+
+### geom_abline()
+
+Arbitrary lines (y = slope * x + intercept).
+
+```typescript
+import { geom_abline } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .geom(geom_abline({ slope: 1, intercept: 0, linetype: 'dashed' }))
+```
+
+---
+
+## Annotations
+
+Add arbitrary text, shapes, and lines to plots.
+
+### annotate()
+
+```typescript
+import { annotate } from '@ggterm/core'
+
+gg(data)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .geom(annotate('text', { x: 5, y: 10, label: 'Important point' }))
+  .geom(annotate('rect', { xmin: 2, xmax: 4, ymin: 5, ymax: 15, alpha: 0.2 }))
+  .geom(annotate('hline', { y: 50, linetype: 'dashed', color: 'red' }))
+```
+
+#### Annotation Types
+
+| Type | Required Options | Description |
+|------|-----------------|-------------|
+| `text` | x, y, label | Text label |
+| `label` | x, y, label | Text with background |
+| `rect` | xmin, xmax, ymin, ymax | Rectangle |
+| `segment` | x, y, xend, yend | Line segment |
+| `hline` | y | Horizontal line |
+| `vline` | x | Vertical line |
+| `abline` | slope, intercept | Arbitrary line |
+| `point` | x, y | Single point |
+
+### Helper Functions
+
+```typescript
+import {
+  annotate_text,
+  annotate_label,
+  annotate_rect,
+  annotate_segment,
+  annotate_hline,
+  annotate_vline
+} from '@ggterm/core'
+
+// Shorthand versions
+annotate_text(5, 10, 'Label')
+annotate_rect(0, 5, 0, 10, { alpha: 0.2 })
+annotate_hline(50, { linetype: 'dashed' })
+```
+
+---
+
+## Advanced Scales (Phase 7)
+
+### Size Scales
+
+```typescript
+import {
+  scale_size_continuous,
+  scale_size_area,
+  scale_size_radius,
+  scale_size_binned
+} from '@ggterm/core'
+
+// Continuous size mapping
+gg(data)
+  .aes({ x: 'x', y: 'y', size: 'value' })
+  .scale(scale_size_continuous({ range: [1, 10] }))
+
+// Area-proportional sizing (for bubble charts)
+.scale(scale_size_area({ max_size: 10 }))
+
+// Binned sizes
+.scale(scale_size_binned({ n_breaks: 5 }))
+```
+
+### Shape Scales
+
+```typescript
+import {
+  scale_shape_discrete,
+  scale_shape_manual,
+  DEFAULT_SHAPES,
+  SHAPE_CHARS
+} from '@ggterm/core'
+
+// Automatic shape assignment
+gg(data)
+  .aes({ x: 'x', y: 'y', shape: 'category' })
+  .scale(scale_shape_discrete())
+
+// Manual shape mapping
+.scale(scale_shape_manual({
+  values: {
+    'A': 'circle',
+    'B': 'square',
+    'C': 'triangle'
+  }
+}))
+```
+
+#### Available Shapes
+
+`circle`, `square`, `triangle`, `diamond`, `cross`, `plus`, `star`,
+`open_circle`, `open_square`, `open_triangle`, `open_diamond`, `dot`
+
+### Alpha Scales
+
+```typescript
+import {
+  scale_alpha_continuous,
+  scale_alpha_discrete,
+  scale_alpha_manual
+} from '@ggterm/core'
+
+// Continuous alpha
+gg(data)
+  .aes({ x: 'x', y: 'y', alpha: 'importance' })
+  .scale(scale_alpha_continuous({ range: [0.2, 1.0] }))
+
+// Discrete alpha
+.scale(scale_alpha_discrete({ values: [0.3, 0.6, 1.0] }))
+```
+
+### Date/Time Scales
+
+```typescript
+import {
+  scale_x_datetime,
+  scale_y_datetime,
+  scale_x_date,
+  scale_x_time,
+  scale_x_duration
+} from '@ggterm/core'
+
+// Full datetime
+gg(data)
+  .aes({ x: 'timestamp', y: 'value' })
+  .scale(scale_x_datetime())
+
+// Date only
+.scale(scale_x_date())
+
+// Time of day (0-24 hours)
+.scale(scale_x_time({ domain: [9, 17] }))  // 9 AM to 5 PM
+
+// Duration
+.scale(scale_x_duration({ unit: 'minutes' }))
+```
+
+---
+
+## Streaming & Performance (Phase 6)
+
+### StreamingPlot
+
+High-performance real-time plotting.
+
+```typescript
+import { createStreamingPlot, createTimeSeriesPlot } from '@ggterm/core'
+
+// Simple streaming plot
+const plot = createStreamingPlot({
+  maxPoints: 100,
+  windowMs: 60000  // 1 minute window
+})
+
+// Add data
+plot.push({ time: Date.now(), value: 42 })
+
+// Render
+console.log(plot.render({ width: 80, height: 20 }))
+```
+
+### Data Window
+
+Sliding window for time-series data.
+
+```typescript
+import { createDataWindow } from '@ggterm/core'
+
+const window = createDataWindow({
+  maxSize: 1000,
+  timeField: 'timestamp',
+  windowMs: 60000
+})
+
+window.push({ timestamp: Date.now(), value: 42 })
+
+// Get windowed data
+const data = window.getData()
+const stats = window.getStats()  // { min, max, mean, count }
+```
+
+### Rolling Aggregator
+
+Compute rolling statistics.
+
+```typescript
+import { createRollingAggregator } from '@ggterm/core'
+
+const agg = createRollingAggregator({
+  windowSize: 10,
+  aggregation: 'mean'  // 'mean', 'sum', 'min', 'max', 'count'
+})
+
+agg.push(42)
+const rollingMean = agg.getValue()
+```
+
+### Data Sampling
+
+Handle large datasets efficiently.
+
+```typescript
+import {
+  autoSample,
+  systematicSample,
+  randomSample,
+  lttbSample  // Largest Triangle Three Buckets
+} from '@ggterm/core'
+
+// Auto-select best method
+const sampled = autoSample(largeData, { targetSize: 1000 })
+
+// LTTB for time series (preserves visual shape)
+const sampled = lttbSample(data, 500, 'time', 'value')
+```
+
+### Level of Detail
+
+Automatic detail reduction for large datasets.
+
+```typescript
+import { createLOD } from '@ggterm/core'
+
+const lod = createLOD(data, {
+  levels: [
+    { threshold: 1000, method: 'systematic', targetSize: 500 },
+    { threshold: 10000, method: 'lttb', targetSize: 1000 }
+  ]
+})
+
+// Get appropriate detail level
+const displayData = lod.getData(currentZoomLevel)
+```
+
+### Canvas Diffing
+
+Efficient re-rendering.
+
+```typescript
+import { createCanvasDiff } from '@ggterm/core'
+
+const diff = createCanvasDiff()
+
+// Only render changed cells
+const changes = diff.compare(previousCanvas, currentCanvas)
+const output = diff.renderChanges(changes)
+```
+
+---
+
+## Terminal Capabilities
+
+### Detection
+
+```typescript
+import {
+  detectCapabilities,
+  getCapabilities,
+  getRecommendedRenderer
+} from '@ggterm/core'
+
+const caps = detectCapabilities()
+// {
+//   colorCapability: 'truecolor',
+//   graphicsProtocol: 'sixel',
+//   unicodeSupport: true,
+//   terminalSize: { width: 120, height: 40 }
+// }
+
+const renderer = getRecommendedRenderer()
+// 'sixel', 'braille', or 'block'
+```
+
+### Color Utilities
+
+```typescript
+import {
+  rgbToAnsi256,
+  rgbToAnsi16,
+  findClosestPaletteColor,
+  quantizeColor
+} from '@ggterm/core'
+
+// Convert RGB to nearest 256-color
+const ansi = rgbToAnsi256(255, 128, 0)
+
+// Quantize for limited palettes
+const quantized = quantizeColor({ r: 255, g: 128, b: 0, a: 1 }, '256')
+```
+
+---
+
 ## TypeScript Types
 
 ```typescript
 import type {
+  // Core types
   Plot,
+  PlotSpec,
   Geom,
   Stat,
   Scale,
@@ -561,6 +981,40 @@ import type {
   Theme,
   AestheticMapping,
   DataSource,
-  RenderOptions
+  DataRecord,
+  RenderOptions,
+
+  // Canvas types
+  Canvas,
+  CanvasCell,
+  RGBA,
+
+  // Scale types
+  Domain,
+  Range,
+  SizeScaleOptions,
+  ShapeScaleOptions,
+  AlphaScaleOptions,
+  DateTimeScaleOptions,
+
+  // Geom types
+  ViolinOptions,
+  TileOptions,
+  ContourOptions,
+  ErrorbarOptions,
+  RectOptions,
+
+  // Streaming types
+  StreamingPlotOptions,
+  WindowOptions,
+  BufferOptions,
+  SamplingOptions,
+  LODLevel,
+
+  // Terminal types
+  ColorCapability,
+  GraphicsProtocol,
+  TerminalCapabilities,
+  RendererType
 } from '@ggterm/core'
 ```
