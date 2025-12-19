@@ -704,6 +704,563 @@ function drawLineClipped(
 }
 
 /**
+ * Render geom_violin (violin plot)
+ * Data should be density curves grouped by x
+ */
+export function renderGeomViolin(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const violinWidth = (geom.params.width as number) ?? 0.8
+  const alpha = (geom.params.alpha as number) ?? 0.8
+  const drawQuantiles = geom.params.draw_quantiles as number[] | null
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  const violinColor: RGBA = { r: 79, g: 169, b: 238, a: 1 }
+  const quantileColor: RGBA = { r: 255, g: 255, b: 255, a: 1 }
+
+  // Group data by x for multiple violins
+  const groups = new Map<string, typeof data>()
+  const groupField = aes.group || aes.x
+
+  for (const row of data) {
+    const key = String(row[groupField] ?? 'default')
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(row)
+  }
+
+  // Draw each violin
+  for (const [groupKey, groupData] of groups) {
+    // Sort by y (density x-axis becomes our y-axis)
+    const sorted = [...groupData].sort((a, b) => {
+      const ay = Number(a[aes.y]) || 0
+      const by = Number(b[aes.y]) || 0
+      return ay - by
+    })
+
+    if (sorted.length < 2) continue
+
+    // Get the center x position for this group
+    const cx = Math.round(scales.x.map(groupKey))
+
+    // Find max density for scaling width
+    let maxDensity = 0
+    for (const row of sorted) {
+      const density = Number(row['density'] ?? row[aes.x]) || 0
+      if (density > maxDensity) maxDensity = density
+    }
+
+    if (maxDensity === 0) continue
+
+    // Calculate available width in canvas units
+    const availableWidth = Math.max(1, Math.floor(violinWidth * 4))
+
+    // Draw the violin shape
+    for (const row of sorted) {
+      const yVal = row[aes.y]
+      const density = Number(row['density'] ?? 1) || 0
+
+      const cy = Math.round(scales.y.map(yVal))
+      const halfWidth = Math.max(0, Math.round((density / maxDensity) * availableWidth / 2))
+
+      // Draw both sides of the violin
+      const fillColor: RGBA = {
+        r: Math.round(violinColor.r * alpha),
+        g: Math.round(violinColor.g * alpha),
+        b: Math.round(violinColor.b * alpha),
+        a: 1,
+      }
+
+      for (let dx = -halfWidth; dx <= halfWidth; dx++) {
+        const x = cx + dx
+        if (x >= plotLeft && x <= plotRight && cy >= plotTop && cy <= plotBottom) {
+          canvas.drawChar(x, cy, '█', fillColor)
+        }
+      }
+    }
+
+    // Draw quantile lines if requested
+    if (drawQuantiles && drawQuantiles.length > 0) {
+      // Calculate quantile positions from the original data values
+      const yValues = sorted.map((r) => Number(r[aes.y]) || 0).sort((a, b) => a - b)
+
+      for (const q of drawQuantiles) {
+        const idx = Math.floor(q * (yValues.length - 1))
+        const qValue = yValues[idx]
+        const qY = Math.round(scales.y.map(qValue))
+
+        // Draw short horizontal line at quantile
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = cx + dx
+          if (x >= plotLeft && x <= plotRight && qY >= plotTop && qY <= plotBottom) {
+            canvas.drawChar(x, qY, '─', quantileColor)
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Render geom_tile (heatmap)
+ */
+export function renderGeomTile(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const alpha = (geom.params.alpha as number) ?? 1
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Calculate tile size from data spacing or use defaults
+  let tileWidth = geom.params.width as number | undefined
+  let tileHeight = geom.params.height as number | undefined
+
+  if (!tileWidth || !tileHeight) {
+    // Infer from data spacing
+    const xVals = [...new Set(data.map((r) => Number(r[aes.x]) || 0))].sort((a, b) => a - b)
+    const yVals = [...new Set(data.map((r) => Number(r[aes.y]) || 0))].sort((a, b) => a - b)
+
+    if (xVals.length > 1) {
+      tileWidth = tileWidth ?? (xVals[1] - xVals[0])
+    }
+    if (yVals.length > 1) {
+      tileHeight = tileHeight ?? (yVals[1] - yVals[0])
+    }
+  }
+
+  tileWidth = tileWidth ?? 1
+  tileHeight = tileHeight ?? 1
+
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const yVal = row[aes.y]
+    const fillVal = aes.fill ? row[aes.fill] : row['fill'] ?? row['value'] ?? 1
+
+    if (xVal === null || xVal === undefined || yVal === null || yVal === undefined) {
+      continue
+    }
+
+    // Map center to canvas coordinates
+    const cx = Math.round(scales.x.map(xVal))
+    const cy = Math.round(scales.y.map(yVal))
+
+    // Calculate tile extent in canvas coordinates
+    const halfW = Math.max(1, Math.floor(Math.abs(scales.x.map(Number(xVal) + tileWidth / 2) - cx)))
+    const halfH = Math.max(1, Math.floor(Math.abs(scales.y.map(Number(yVal) + tileHeight / 2) - cy)))
+
+    // Get color from scale or default
+    let color: RGBA
+    if (scales.color && typeof fillVal === 'number') {
+      color = scales.color.map(fillVal)
+    } else if (scales.color) {
+      color = scales.color.map(fillVal)
+    } else {
+      // Default gradient based on value
+      const intensity = Math.min(1, Math.max(0, Number(fillVal) || 0.5))
+      color = {
+        r: Math.round(79 + 176 * intensity),
+        g: Math.round(169 - 130 * intensity),
+        b: Math.round(238 - 198 * intensity),
+        a: alpha,
+      }
+    }
+
+    // Apply alpha
+    color = { ...color, a: color.a * alpha }
+
+    // Choose fill character based on value intensity
+    const fillChar = '█'
+
+    // Draw the tile
+    for (let dy = -halfH; dy <= halfH; dy++) {
+      for (let dx = -halfW; dx <= halfW; dx++) {
+        const x = cx + dx
+        const y = cy + dy
+        if (x >= plotLeft && x <= plotRight && y >= plotTop && y <= plotBottom) {
+          canvas.drawChar(x, y, fillChar, color)
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Render geom_contour (contour lines)
+ * Uses marching squares algorithm for contour extraction
+ */
+export function renderGeomContour(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const numLevels = (geom.params.bins as number) ?? 10
+  const breaks = geom.params.breaks as number[] | undefined
+  const linetype = (geom.params.linetype as string) ?? 'solid'
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Build grid from data (assuming data has x, y, z/level values)
+  const zField = 'z' in data[0] ? 'z' : 'level' in data[0] ? 'level' : aes.fill || 'value'
+
+  // Get unique x and y values to build grid
+  const xSet = new Set<number>()
+  const ySet = new Set<number>()
+  const zMap = new Map<string, number>()
+
+  for (const row of data) {
+    const x = Number(row[aes.x])
+    const y = Number(row[aes.y])
+    const z = Number(row[zField] ?? 0)
+    xSet.add(x)
+    ySet.add(y)
+    zMap.set(`${x},${y}`, z)
+  }
+
+  const xVals = [...xSet].sort((a, b) => a - b)
+  const yVals = [...ySet].sort((a, b) => a - b)
+
+  if (xVals.length < 2 || yVals.length < 2) return
+
+  // Find z range
+  let zMin = Infinity
+  let zMax = -Infinity
+  for (const z of zMap.values()) {
+    if (z < zMin) zMin = z
+    if (z > zMax) zMax = z
+  }
+
+  // Calculate contour levels
+  const levels = breaks ?? Array.from(
+    { length: numLevels },
+    (_, i) => zMin + (zMax - zMin) * (i + 1) / (numLevels + 1)
+  )
+
+  // Contour line characters
+  const lineChar = linetype === 'dotted' ? '·' : linetype === 'dashed' ? '╌' : '─'
+
+  // Color gradient for different levels
+  const getContourColor = (level: number): RGBA => {
+    const t = (level - zMin) / (zMax - zMin || 1)
+    return {
+      r: Math.round(68 + 187 * t),
+      g: Math.round(1 + 148 * (1 - t)),
+      b: Math.round(84 + 171 * (1 - t)),
+      a: 1,
+    }
+  }
+
+  // Simple contour tracing using threshold
+  for (const level of levels) {
+    const color = getContourColor(level)
+
+    // For each cell in the grid, check if contour passes through
+    for (let i = 0; i < xVals.length - 1; i++) {
+      for (let j = 0; j < yVals.length - 1; j++) {
+        const x0 = xVals[i], x1 = xVals[i + 1]
+        const y0 = yVals[j], y1 = yVals[j + 1]
+
+        const z00 = zMap.get(`${x0},${y0}`) ?? 0
+        const z10 = zMap.get(`${x1},${y0}`) ?? 0
+        const z01 = zMap.get(`${x0},${y1}`) ?? 0
+        const z11 = zMap.get(`${x1},${y1}`) ?? 0
+
+        // Check if level crosses any edge
+        const crosses = (
+          (z00 < level && z10 >= level) || (z00 >= level && z10 < level) ||
+          (z00 < level && z01 >= level) || (z00 >= level && z01 < level) ||
+          (z10 < level && z11 >= level) || (z10 >= level && z11 < level) ||
+          (z01 < level && z11 >= level) || (z01 >= level && z11 < level)
+        )
+
+        if (crosses) {
+          // Draw contour point at cell center
+          const cx = Math.round(scales.x.map((x0 + x1) / 2))
+          const cy = Math.round(scales.y.map((y0 + y1) / 2))
+
+          if (cx >= plotLeft && cx <= plotRight && cy >= plotTop && cy <= plotBottom) {
+            canvas.drawChar(cx, cy, lineChar, color)
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Render geom_errorbar (vertical error bars)
+ */
+export function renderGeomErrorbar(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const width = (geom.params.width as number) ?? 0.5
+  const linetype = (geom.params.linetype as string) ?? 'solid'
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  const lineChar = linetype === 'dotted' ? '·' : linetype === 'dashed' ? '╌' : '│'
+  const capChar = '─'
+
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const ymin = row['ymin'] as number
+    const ymax = row['ymax'] as number
+
+    if (xVal === null || xVal === undefined || ymin === undefined || ymax === undefined) {
+      continue
+    }
+
+    const cx = Math.round(scales.x.map(xVal))
+    const cyMin = Math.round(scales.y.map(ymin))
+    const cyMax = Math.round(scales.y.map(ymax))
+
+    const color = getPointColor(row, aes, scales.color)
+    const halfWidth = Math.max(1, Math.round(width * 2))
+
+    // Draw vertical line
+    const top = Math.min(cyMin, cyMax)
+    const bottom = Math.max(cyMin, cyMax)
+    for (let y = top; y <= bottom; y++) {
+      if (cx >= plotLeft && cx <= plotRight && y >= plotTop && y <= plotBottom) {
+        canvas.drawChar(cx, y, lineChar, color)
+      }
+    }
+
+    // Draw caps
+    for (let dx = -halfWidth; dx <= halfWidth; dx++) {
+      const x = cx + dx
+      if (x >= plotLeft && x <= plotRight) {
+        if (cyMin >= plotTop && cyMin <= plotBottom) {
+          canvas.drawChar(x, cyMin, capChar, color)
+        }
+        if (cyMax >= plotTop && cyMax <= plotBottom) {
+          canvas.drawChar(x, cyMax, capChar, color)
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Render geom_rect (rectangles)
+ */
+export function renderGeomRect(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const alpha = (geom.params.alpha as number) ?? 0.5
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  for (const row of data) {
+    const xmin = row['xmin'] as number ?? row[aes.x]
+    const xmax = row['xmax'] as number ?? row[aes.x]
+    const ymin = row['ymin'] as number ?? row[aes.y]
+    const ymax = row['ymax'] as number ?? row[aes.y]
+
+    if (xmin === undefined || xmax === undefined || ymin === undefined || ymax === undefined) {
+      continue
+    }
+
+    const x1 = Math.round(scales.x.map(xmin))
+    const x2 = Math.round(scales.x.map(xmax))
+    const y1 = Math.round(scales.y.map(ymax)) // Note: y is inverted
+    const y2 = Math.round(scales.y.map(ymin))
+
+    let color = getPointColor(row, aes, scales.color)
+    color = {
+      r: Math.round(color.r * alpha),
+      g: Math.round(color.g * alpha),
+      b: Math.round(color.b * alpha),
+      a: 1,
+    }
+
+    // Fill the rectangle
+    const left = Math.max(plotLeft, Math.min(x1, x2))
+    const right = Math.min(plotRight, Math.max(x1, x2))
+    const top = Math.max(plotTop, Math.min(y1, y2))
+    const bottom = Math.min(plotBottom, Math.max(y1, y2))
+
+    for (let y = top; y <= bottom; y++) {
+      for (let x = left; x <= right; x++) {
+        canvas.drawChar(x, y, '░', color)
+      }
+    }
+
+    // Draw border
+    const borderColor: RGBA = { ...color, r: Math.min(255, color.r + 50), g: Math.min(255, color.g + 50), b: Math.min(255, color.b + 50) }
+    for (let x = left; x <= right; x++) {
+      if (top >= plotTop && top <= plotBottom) canvas.drawChar(x, top, '─', borderColor)
+      if (bottom >= plotTop && bottom <= plotBottom) canvas.drawChar(x, bottom, '─', borderColor)
+    }
+    for (let y = top; y <= bottom; y++) {
+      if (left >= plotLeft && left <= plotRight) canvas.drawChar(left, y, '│', borderColor)
+      if (right >= plotLeft && right <= plotRight) canvas.drawChar(right, y, '│', borderColor)
+    }
+  }
+}
+
+/**
+ * Render geom_abline (arbitrary lines y = slope * x + intercept)
+ */
+export function renderGeomAbline(
+  _data: DataSource,
+  geom: Geom,
+  _aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const slope = (geom.params.slope as number) ?? 1
+  const intercept = (geom.params.intercept as number) ?? 0
+  const linetype = (geom.params.linetype as string) ?? 'solid'
+
+  const lineChar = linetype === 'dotted' ? '·' : linetype === 'dashed' ? '╌' : '─'
+  const color = (geom.params.color as RGBA) ?? { r: 128, g: 128, b: 128, a: 1 }
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Get x domain for line calculation
+  const xDomain = scales.x.domain as [number, number]
+
+  // Calculate y values at domain edges
+  const y1 = slope * xDomain[0] + intercept
+  const y2 = slope * xDomain[1] + intercept
+
+  // Map to canvas coordinates
+  const cx1 = Math.round(scales.x.map(xDomain[0]))
+  const cy1 = Math.round(scales.y.map(y1))
+  const cx2 = Math.round(scales.x.map(xDomain[1]))
+  const cy2 = Math.round(scales.y.map(y2))
+
+  // Draw line with clipping
+  drawLineClipped(canvas, cx1, cy1, cx2, cy2, color, lineChar, plotLeft, plotRight, plotTop, plotBottom)
+}
+
+/**
+ * Render geom_linerange (vertical line from ymin to ymax)
+ */
+export function renderGeomLinerange(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const linetype = (geom.params.linetype as string) ?? 'solid'
+  const lineChar = linetype === 'dotted' ? '·' : linetype === 'dashed' ? '╌' : '│'
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const ymin = row['ymin'] as number
+    const ymax = row['ymax'] as number
+
+    if (xVal === null || xVal === undefined || ymin === undefined || ymax === undefined) {
+      continue
+    }
+
+    const cx = Math.round(scales.x.map(xVal))
+    const cyMin = Math.round(scales.y.map(ymin))
+    const cyMax = Math.round(scales.y.map(ymax))
+
+    const color = getPointColor(row, aes, scales.color)
+
+    // Draw vertical line
+    const top = Math.min(cyMin, cyMax)
+    const bottom = Math.max(cyMin, cyMax)
+    for (let y = top; y <= bottom; y++) {
+      if (cx >= plotLeft && cx <= plotRight && y >= plotTop && y <= plotBottom) {
+        canvas.drawChar(cx, y, lineChar, color)
+      }
+    }
+  }
+}
+
+/**
+ * Render geom_pointrange (point with vertical line from ymin to ymax)
+ */
+export function renderGeomPointrange(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  // First render the linerange
+  renderGeomLinerange(data, geom, aes, scales, canvas)
+
+  // Get plot area boundaries
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Then render points at y position
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const yVal = row[aes.y]
+
+    if (xVal === null || xVal === undefined || yVal === null || yVal === undefined) {
+      continue
+    }
+
+    const cx = Math.round(scales.x.map(xVal))
+    const cy = Math.round(scales.y.map(yVal))
+
+    const color = getPointColor(row, aes, scales.color)
+
+    if (cx >= plotLeft && cx <= plotRight && cy >= plotTop && cy <= plotBottom) {
+      canvas.drawChar(cx, cy, '●', color)
+    }
+  }
+}
+
+/**
  * Geometry renderer dispatch
  */
 export function renderGeom(
@@ -745,6 +1302,34 @@ export function renderGeom(
       break
     case 'segment':
       renderGeomSegment(data, geom, aes, scales, canvas)
+      break
+    // Phase 7: Extended Grammar
+    case 'violin':
+      renderGeomViolin(data, geom, aes, scales, canvas)
+      break
+    case 'tile':
+    case 'raster':
+      renderGeomTile(data, geom, aes, scales, canvas)
+      break
+    case 'contour':
+    case 'contour_filled':
+    case 'density_2d':
+      renderGeomContour(data, geom, aes, scales, canvas)
+      break
+    case 'errorbar':
+      renderGeomErrorbar(data, geom, aes, scales, canvas)
+      break
+    case 'rect':
+      renderGeomRect(data, geom, aes, scales, canvas)
+      break
+    case 'abline':
+      renderGeomAbline(data, geom, aes, scales, canvas)
+      break
+    case 'linerange':
+      renderGeomLinerange(data, geom, aes, scales, canvas)
+      break
+    case 'pointrange':
+      renderGeomPointrange(data, geom, aes, scales, canvas)
       break
     default:
       // Unknown geom type, skip

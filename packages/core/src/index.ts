@@ -61,6 +61,28 @@ export {
   geom_boxplot,
   geom_segment,
   geom_curve,
+  // Phase 7: Extended Grammar
+  geom_violin,
+  geom_tile,
+  geom_raster,
+  geom_contour,
+  geom_contour_filled,
+  geom_density_2d,
+  geom_errorbar,
+  geom_errorbarh,
+  geom_crossbar,
+  geom_linerange,
+  geom_pointrange,
+  geom_rect,
+  geom_abline,
+} from './geoms'
+export type {
+  ViolinOptions,
+  TileOptions,
+  ContourOptions,
+  ErrorbarOptions,
+  RectOptions,
+  AblineOptions,
 } from './geoms'
 
 // Statistical transformations
@@ -110,6 +132,48 @@ export {
   scale_fill_viridis,
   scale_fill_discrete,
   scale_fill_manual,
+  // Phase 7: Advanced Scales
+  scale_size_continuous,
+  scale_size_area,
+  scale_size_radius,
+  scale_size_identity,
+  scale_size_binned,
+  scale_shape_discrete,
+  scale_shape_manual,
+  scale_shape_identity,
+  scale_shape_ordinal,
+  DEFAULT_SHAPES,
+  SHAPE_CHARS,
+  scale_alpha_continuous,
+  scale_alpha,
+  scale_alpha_identity,
+  scale_alpha_discrete,
+  scale_alpha_manual,
+  scale_alpha_binned,
+  scale_x_datetime,
+  scale_y_datetime,
+  scale_x_date,
+  scale_y_date,
+  scale_x_time,
+  scale_y_time,
+  scale_x_duration,
+  scale_y_duration,
+  formatDateTime,
+  calculateDateTimeTicks,
+} from './scales'
+
+export type {
+  SizeScaleOptions,
+  BinnedSizeOptions,
+  ShapeScaleOptions,
+  ManualShapeOptions,
+  AlphaScaleOptions,
+  DiscreteAlphaOptions,
+  ManualAlphaOptions,
+  BinnedAlphaOptions,
+  DateTimeScaleOptions,
+  TimeScaleOptions,
+  DurationScaleOptions,
 } from './scales'
 
 // Coordinates
@@ -137,6 +201,18 @@ export {
   themeClassic,
   themeVoid,
 } from './themes/default'
+
+// Annotations (Phase 7)
+export {
+  annotate,
+  annotate_text,
+  annotate_label,
+  annotate_rect,
+  annotate_segment,
+  annotate_hline,
+  annotate_vline,
+} from './annotations'
+export type { AnnotationOptions } from './annotations'
 
 // Terminal utilities
 export {
