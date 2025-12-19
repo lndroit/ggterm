@@ -126,6 +126,12 @@ export interface ResolvedScale {
   domain: [number, number] | string[]
   range: [number, number]
 
+  /** Custom tick positions (if specified by user) */
+  breaks?: number[]
+
+  /** Custom tick labels (if specified by user) */
+  labels?: string[]
+
   /** Map data value to normalized 0-1 position */
   normalize(value: unknown): number
 
@@ -354,21 +360,29 @@ export function createResolvedSizeScale(
 }
 
 /**
+ * Coordinate limits for zooming/clipping
+ */
+export interface CoordLimits {
+  xlim?: [number, number]
+  ylim?: [number, number]
+}
+
+/**
  * Build scale context from data and aesthetic mapping
  */
 export function buildScaleContext(
   data: DataSource,
   aes: AestheticMapping,
   plotArea: { x: number; y: number; width: number; height: number },
-  userScales: Scale[] = []
+  userScales: Scale[] = [],
+  coordLimits?: CoordLimits
 ): ScaleContext {
   // Find user-provided scales
   const userXScale = userScales.find((s) => s.aesthetic === 'x')
   const userYScale = userScales.find((s) => s.aesthetic === 'y')
-  // TODO: Support user-provided color scales
-  // const userColorScale = userScales.find(
-  //   (s) => s.aesthetic === 'color' || s.aesthetic === 'fill'
-  // )
+  const userColorScale = userScales.find(
+    (s) => s.aesthetic === 'color' || s.aesthetic === 'fill'
+  )
 
   // Determine if x is categorical or continuous
   const xIsCategorical = isCategoricalField(data, aes.x)
@@ -383,17 +397,28 @@ export function buildScaleContext(
       [plotArea.x, plotArea.x + plotArea.width - 1]
     )
   } else {
-    const xDomain = userXScale?.domain as [number, number] | undefined ??
+    // Priority: coord xlim > user scale domain > inferred from data
+    const xDomain = coordLimits?.xlim ??
+      userXScale?.domain as [number, number] | undefined ??
       niceDomain(inferContinuousDomain(data, aes.x))
     x = createResolvedContinuousScale(
       'x',
       xDomain,
       [plotArea.x, plotArea.x + plotArea.width - 1]
     )
+    // Apply user-provided breaks and labels
+    if (userXScale?.breaks) {
+      x.breaks = userXScale.breaks
+    }
+    if (userXScale?.labels) {
+      x.labels = userXScale.labels
+    }
   }
 
   // Infer y domain (always continuous for now)
-  const yDomain = userYScale?.domain as [number, number] | undefined ??
+  // Priority: coord ylim > user scale domain > inferred from data
+  const yDomain = coordLimits?.ylim ??
+    userYScale?.domain as [number, number] | undefined ??
     niceDomain(inferContinuousDomain(data, aes.y))
 
   // Create y scale (maps to vertical canvas range, inverted because y=0 is top)
@@ -402,13 +427,41 @@ export function buildScaleContext(
     yDomain,
     [plotArea.y + plotArea.height - 1, plotArea.y] // Inverted!
   )
+  // Apply user-provided breaks and labels
+  if (userYScale?.breaks) {
+    y.breaks = userYScale.breaks
+  }
+  if (userYScale?.labels) {
+    y.labels = userYScale.labels
+  }
 
   const context: ScaleContext = { x, y }
 
   // Handle color aesthetic if present
   if (aes.color) {
     const colorDomain = inferDiscreteDomain(data, aes.color)
-    context.color = createResolvedDiscreteColorScale(colorDomain)
+
+    // Use user-provided color scale if available
+    if (userColorScale && userColorScale.map) {
+      context.color = {
+        aesthetic: 'color',
+        type: userColorScale.type === 'continuous' ? 'continuous' : 'discrete',
+        domain: userColorScale.type === 'continuous'
+          ? (userColorScale.domain as [number, number] ?? inferContinuousDomain(data, aes.color))
+          : colorDomain,
+        map: (value: unknown): RGBA => {
+          const result = userColorScale.map(value)
+          // Handle both RGBA and hex string returns
+          if (typeof result === 'object' && 'r' in result) {
+            return result as RGBA
+          }
+          // Default fallback
+          return { r: 128, g: 128, b: 128, a: 1 }
+        },
+      }
+    } else {
+      context.color = createResolvedDiscreteColorScale(colorDomain)
+    }
   }
 
   // Handle size aesthetic if present

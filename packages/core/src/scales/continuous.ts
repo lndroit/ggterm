@@ -38,6 +38,8 @@ function createContinuousScale(
     type: 'continuous',
     aesthetic,
     domain: options.limits,
+    breaks: options.breaks,
+    labels: options.labels,
     map(value: unknown): number {
       const num = Number(value)
       if (isNaN(num)) return 0

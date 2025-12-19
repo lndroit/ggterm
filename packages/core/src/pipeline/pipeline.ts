@@ -61,10 +61,11 @@ export function calculateLayout(
     spec.theme.legend.position !== 'none' && !!spec.aes.color
 
   // Calculate margins
+  const legendPosition = spec.theme.legend.position
   const margins = {
     top: hasTitle ? 2 : 1,
-    right: hasLegend && spec.theme.legend.position === 'right' ? 15 : 1,
-    bottom: 2 + (hasXLabel ? 1 : 0),
+    right: hasLegend && legendPosition === 'right' ? 15 : 1,
+    bottom: 2 + (hasXLabel ? 1 : 0) + (hasLegend && legendPosition === 'bottom' ? 2 : 0),
     left: 8 + (hasYLabel ? 2 : 0),
   }
 
@@ -83,12 +84,21 @@ export function calculateLayout(
   const layout: PlotLayout = { width, height, margins, plotArea }
 
   // Legend area
-  if (hasLegend && spec.theme.legend.position === 'right') {
-    layout.legendArea = {
-      x: width - margins.right + 1,
-      y: margins.top,
-      width: margins.right - 1,
-      height: plotArea.height,
+  if (hasLegend) {
+    if (legendPosition === 'right') {
+      layout.legendArea = {
+        x: width - margins.right + 1,
+        y: margins.top,
+        width: margins.right - 1,
+        height: plotArea.height,
+      }
+    } else if (legendPosition === 'bottom') {
+      layout.legendArea = {
+        x: margins.left,
+        y: height - 2,
+        width: plotArea.width,
+        height: 2,
+      }
     }
   }
 
@@ -193,11 +203,17 @@ export function renderToCanvas(
   }
 
   // Build scale context based on (potentially transformed) data
+  // Pass coord limits for zooming/clipping
+  const coordLimits = spec.coord.xlim || spec.coord.ylim
+    ? { xlim: spec.coord.xlim, ylim: spec.coord.ylim }
+    : undefined
+
   const scales = buildScaleContext(
     scaleData,
     scaleAes,
     layout.plotArea,
-    spec.scales
+    spec.scales,
+    coordLimits
   )
 
   // Render title if present
@@ -228,7 +244,8 @@ export function renderToCanvas(
       layout.legendArea.x,
       layout.legendArea.y,
       spec.labels.color,
-      spec.theme
+      spec.theme,
+      layout.legendArea.width
     )
   }
 
@@ -263,12 +280,13 @@ function renderFacetedToCanvas(
 
   const hasTitle = !!spec.labels.title
   const hasLegend = spec.theme.legend.position !== 'none' && !!spec.aes.color
+  const legendPosition = spec.theme.legend.position
 
   // Calculate margins
   const margins = {
     top: hasTitle ? 2 : 1,
-    right: hasLegend && spec.theme.legend.position === 'right' ? 15 : 1,
-    bottom: 3,  // Space for x-axis label
+    right: hasLegend && legendPosition === 'right' ? 15 : 1,
+    bottom: 3 + (hasLegend && legendPosition === 'bottom' ? 2 : 0),  // Space for x-axis label + legend
     left: 10,   // Space for y-axis
   }
 
@@ -322,15 +340,31 @@ function renderFacetedToCanvas(
 
     if (sharedScales.color) {
       const colorDomain = sharedScales.color.domain as string[]
-      renderLegend(
-        canvas,
-        colorDomain,
-        (v) => sharedScales.color!.map(v),
-        width - margins.right + 1,
-        margins.top,
-        spec.labels.color,
-        spec.theme
-      )
+      const legendPosition = spec.theme.legend.position
+
+      if (legendPosition === 'bottom') {
+        renderLegend(
+          canvas,
+          colorDomain,
+          (v) => sharedScales.color!.map(v),
+          margins.left,
+          height - 2,
+          spec.labels.color,
+          spec.theme,
+          width - margins.left - margins.right
+        )
+      } else {
+        renderLegend(
+          canvas,
+          colorDomain,
+          (v) => sharedScales.color!.map(v),
+          width - margins.right + 1,
+          margins.top,
+          spec.labels.color,
+          spec.theme,
+          margins.right - 1
+        )
+      }
     }
   }
 

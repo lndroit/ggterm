@@ -108,18 +108,22 @@ export function renderBottomAxis(
   // Calculate and draw ticks
   if (scale.type === 'continuous') {
     const domain = scale.domain as [number, number]
-    // Request more ticks - aim for one every ~8 characters
-    const targetTicks = Math.max(3, Math.floor((xEnd - xStart) / 8))
-    const ticks = calculateTicks(domain, targetTicks)
+    // Use custom breaks if provided, otherwise calculate nice ticks
+    const ticks = scale.breaks ?? (() => {
+      // Request more ticks - aim for one every ~8 characters
+      const targetTicks = Math.max(3, Math.floor((xEnd - xStart) / 8))
+      return calculateTicks(domain, targetTicks)
+    })()
 
-    for (const tickValue of ticks) {
+    for (let i = 0; i < ticks.length; i++) {
+      const tickValue = ticks[i]
       const x = Math.round(scale.toCanvas(scale.normalize(tickValue)))
       if (x >= xStart && x <= xEnd) {
         // Tick mark
         canvas.drawChar(x, y, '┬', axisColor)
 
-        // Tick label
-        const tickLabel = formatTick(tickValue)
+        // Tick label - use custom label if provided, otherwise format the value
+        const tickLabel = scale.labels?.[i] ?? formatTick(tickValue)
         const labelX = x - Math.floor(tickLabel.length / 2)
         canvas.drawString(Math.max(xStart, labelX), y + 1, tickLabel, axisColor)
       }
@@ -181,18 +185,22 @@ export function renderLeftAxis(
   // Calculate and draw ticks
   if (scale.type === 'continuous') {
     const domain = scale.domain as [number, number]
-    // Request more ticks - aim for one every ~3 rows
-    const targetTicks = Math.max(3, Math.floor((bottom - top) / 3))
-    const ticks = calculateTicks(domain, targetTicks)
+    // Use custom breaks if provided, otherwise calculate nice ticks
+    const ticks = scale.breaks ?? (() => {
+      // Request more ticks - aim for one every ~3 rows
+      const targetTicks = Math.max(3, Math.floor((bottom - top) / 3))
+      return calculateTicks(domain, targetTicks)
+    })()
 
-    for (const tickValue of ticks) {
+    for (let i = 0; i < ticks.length; i++) {
+      const tickValue = ticks[i]
       const y = Math.round(scale.toCanvas(scale.normalize(tickValue)))
       if (y >= top && y <= bottom) {
         // Tick mark
         canvas.drawChar(x, y, '┤', axisColor)
 
-        // Tick label (right-aligned to the left of the axis)
-        const tickLabel = formatTick(tickValue)
+        // Tick label - use custom label if provided, otherwise format the value
+        const tickLabel = scale.labels?.[i] ?? formatTick(tickValue)
         const labelX = x - tickLabel.length - 1
         canvas.drawString(Math.max(0, labelX), y, tickLabel, axisColor)
       }
@@ -348,25 +356,54 @@ export function renderLegend(
   x: number,
   y: number,
   title: string | undefined,
-  theme: Theme
+  theme: Theme,
+  width?: number
 ): void {
   if (theme.legend.position === 'none') return
 
   const legendColor: RGBA = { r: 180, g: 180, b: 180, a: 1 }
 
-  let currentY = y
+  if (theme.legend.position === 'bottom' && width) {
+    // Horizontal layout for bottom legend
+    let currentX = x
 
-  // Legend title
-  if (title) {
-    canvas.drawString(x, currentY, title, legendColor)
-    currentY++
-  }
+    // Legend title (optional, inline)
+    if (title) {
+      canvas.drawString(currentX, y, title + ':', legendColor)
+      currentX += title.length + 2
+    }
 
-  // Legend items
-  for (const value of colorDomain) {
-    const color = colorMap(value)
-    canvas.drawChar(x, currentY, '●', color)
-    canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
-    currentY++
+    // Legend items laid out horizontally
+    for (const value of colorDomain) {
+      const color = colorMap(value)
+      const label = value.substring(0, 10)
+      const itemWidth = label.length + 3 // bullet + space + label + spacing
+
+      // Check if we have room for this item
+      if (currentX + itemWidth > x + width) {
+        break // No more room
+      }
+
+      canvas.drawChar(currentX, y, '●', color)
+      canvas.drawString(currentX + 2, y, label, legendColor)
+      currentX += itemWidth
+    }
+  } else {
+    // Vertical layout for right legend (default)
+    let currentY = y
+
+    // Legend title
+    if (title) {
+      canvas.drawString(x, currentY, title, legendColor)
+      currentY++
+    }
+
+    // Legend items
+    for (const value of colorDomain) {
+      const color = colorMap(value)
+      canvas.drawChar(x, currentY, '●', color)
+      canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
+      currentY++
+    }
   }
 }

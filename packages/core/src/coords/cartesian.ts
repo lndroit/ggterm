@@ -12,11 +12,16 @@ export interface CartesianOptions {
 
 /**
  * Standard Cartesian coordinates (x horizontal, y vertical)
+ *
+ * Unlike scale limits which filter data, coord limits zoom the view
+ * while keeping all data - points outside the limits are clipped visually.
  */
-export function coordCartesian(_options: CartesianOptions = {}): Coord {
-  // TODO: Implement xlim, ylim, clip options
+export function coordCartesian(options: CartesianOptions = {}): Coord {
   return {
     type: 'cartesian',
+    xlim: options.xlim,
+    ylim: options.ylim,
+    clip: options.clip ?? true,
     transform(x: number, y: number) {
       // Cartesian is identity transform
       return { x, y }

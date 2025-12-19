@@ -37,6 +37,10 @@ export interface Scale {
   aesthetic: string
   domain?: Domain
   range?: Range
+  /** Custom tick positions */
+  breaks?: number[]
+  /** Custom tick labels (must match breaks length if both provided) */
+  labels?: string[]
   map(value: unknown): number | string | RGBA
   invert?(position: number): unknown
 }
@@ -45,6 +49,12 @@ export interface Scale {
 export interface Coord {
   type: string
   transform(x: number, y: number): { x: number; y: number }
+  /** X-axis limits for zooming (data is clipped, not filtered) */
+  xlim?: [number, number]
+  /** Y-axis limits for zooming (data is clipped, not filtered) */
+  ylim?: [number, number]
+  /** Whether to clip points outside the limits (default: true) */
+  clip?: boolean
 }
 
 // Geometry interface

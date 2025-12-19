@@ -12,6 +12,9 @@ import { geom_bar } from '../../geoms/bar'
 import { geom_area } from '../../geoms/area'
 import { geom_text } from '../../geoms/text'
 import { scale_x_continuous, scale_y_continuous } from '../../scales/continuous'
+import { scale_color_discrete, scale_color_manual } from '../../scales/color'
+import { defaultTheme } from '../../themes/default'
+import { coordCartesian } from '../../coords/cartesian'
 
 describe('Rendering Pipeline Integration', () => {
   describe('basic rendering', () => {
@@ -187,6 +190,60 @@ describe('Rendering Pipeline Integration', () => {
 
       expect(output).toBeDefined()
       expect(output.length).toBeGreaterThan(0)
+    })
+
+    it('should apply custom x breaks', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .scale(scale_x_continuous({ breaks: [0, 25, 50, 75, 100] }))
+
+      const output = plot.render({ width: 60, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output).toContain('25')
+      expect(output).toContain('75')
+    })
+
+    it('should apply custom y breaks', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 10, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .scale(scale_y_continuous({ breaks: [0, 50, 100] }))
+
+      const output = plot.render({ width: 40, height: 12 })
+
+      expect(output).toBeDefined()
+      expect(output).toContain('50')
+    })
+
+    it('should apply custom labels with breaks', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .scale(scale_x_continuous({
+          breaks: [0, 50, 100],
+          labels: ['Low', 'Mid', 'High'],
+        }))
+
+      const output = plot.render({ width: 60, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output).toContain('Low')
+      expect(output).toContain('Mid')
+      expect(output).toContain('High')
     })
   })
 
@@ -391,6 +448,188 @@ describe('Rendering Pipeline Integration', () => {
       const plot = gg(data)
         .aes({ x: 'x', y: 'y' })
         .geom(geom_point({ color: '#ff0000' }))
+
+      const output = plot.render({ width: 40, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output.length).toBeGreaterThan(0)
+    })
+
+    it('should use user-provided discrete color scale', () => {
+      const data = [
+        { x: 0, y: 0, group: 'A' },
+        { x: 5, y: 5, group: 'B' },
+        { x: 10, y: 10, group: 'C' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .scale(scale_color_discrete({ palette: 'Set1' }))
+
+      const output = plot.render({ width: 40, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output.length).toBeGreaterThan(0)
+    })
+
+    it('should use user-provided manual color scale', () => {
+      const data = [
+        { x: 0, y: 0, group: 'A' },
+        { x: 5, y: 5, group: 'B' },
+        { x: 10, y: 10, group: 'A' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .scale(scale_color_manual({
+          values: { 'A': '#ff0000', 'B': '#00ff00' },
+        }))
+
+      const output = plot.render({ width: 40, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('legend positioning', () => {
+    it('should render legend at bottom position', () => {
+      const data = [
+        { x: 0, y: 0, group: 'A' },
+        { x: 5, y: 5, group: 'B' },
+        { x: 10, y: 10, group: 'C' },
+      ]
+
+      const bottomTheme = {
+        ...defaultTheme(),
+        legend: { ...defaultTheme().legend, position: 'bottom' as const },
+      }
+
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .theme(bottomTheme)
+
+      const output = plot.render({ width: 60, height: 12 })
+
+      expect(output).toBeDefined()
+      expect(output.length).toBeGreaterThan(0)
+      // Legend items should appear on the last lines
+      const lines = output.split('\n')
+      const lastLines = lines.slice(-3).join('')
+      expect(lastLines).toContain('A')
+      expect(lastLines).toContain('B')
+      expect(lastLines).toContain('C')
+    })
+
+    it('should render legend at right position (default)', () => {
+      const data = [
+        { x: 0, y: 0, group: 'X' },
+        { x: 10, y: 10, group: 'Y' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+
+      const output = plot.render({ width: 50, height: 10 })
+
+      expect(output).toBeDefined()
+      expect(output.length).toBeGreaterThan(0)
+      // Right-aligned legend items should be on the right side
+      expect(output).toContain('X')
+      expect(output).toContain('Y')
+    })
+
+    it('should hide legend when position is none', () => {
+      const data = [
+        { x: 0, y: 0, group: 'Hidden' },
+        { x: 10, y: 10, group: 'Also Hidden' },
+      ]
+
+      const noLegendTheme = {
+        ...defaultTheme(),
+        legend: { ...defaultTheme().legend, position: 'none' as const },
+      }
+
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .theme(noLegendTheme)
+
+      const output = plot.render({ width: 40, height: 10 })
+
+      expect(output).toBeDefined()
+      // The legend labels should not appear since position is 'none'
+      expect(output).not.toContain('Hidden')
+      expect(output).not.toContain('Also Hidden')
+    })
+  })
+
+  describe('coordinate limits', () => {
+    it('should apply xlim to zoom x-axis', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 50, y: 50 },
+        { x: 100, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .coord(coordCartesian({ xlim: [0, 50] }))
+
+      const output = plot.render({ width: 60, height: 10 })
+
+      expect(output).toBeDefined()
+      // The x-axis should be limited to 0-50
+      // The value 100 point would be off-screen
+      expect(output).toContain('50')
+    })
+
+    it('should apply ylim to zoom y-axis', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 10, y: 50 },
+        { x: 20, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .coord(coordCartesian({ ylim: [0, 100] }))
+
+      const output = plot.render({ width: 40, height: 12 })
+
+      expect(output).toBeDefined()
+      // The y-axis should show ticks within the 0-100 range
+      expect(output).toContain('0')
+      expect(output).toContain('100')
+    })
+
+    it('should apply both xlim and ylim', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .coord(coordCartesian({ xlim: [20, 80], ylim: [20, 80] }))
+
+      const output = plot.render({ width: 60, height: 12 })
+
+      expect(output).toBeDefined()
+      expect(output).toContain('20')
+      expect(output).toContain('80')
+    })
+
+    it('should work with default coord when no limits specified', () => {
+      const data = [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y' })
+        .geom(geom_point())
+        .coord(coordCartesian())
 
       const output = plot.render({ width: 40, height: 10 })
 
