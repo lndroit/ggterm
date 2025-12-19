@@ -76,7 +76,7 @@ export function themeDark(): Theme {
     panel: {
       background: '#1e1e1e',
       border: 'rounded',
-      grid: { major: '#333', minor: null },
+      grid: { major: '·', minor: null },
     },
     axis: {
       text: { color: '#ccc' },

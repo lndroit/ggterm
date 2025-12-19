@@ -416,7 +416,7 @@ describe('geom_violin', () => {
   it('should create a violin geometry', () => {
     const geom = geom_violin()
     expect(geom.type).toBe('violin')
-    expect(geom.stat).toBe('density')
+    expect(geom.stat).toBe('ydensity')
   })
 
   it('should have default width of 0.8', () => {

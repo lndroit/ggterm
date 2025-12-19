@@ -535,19 +535,24 @@ function drawLine(
 }
 
 /**
- * Render geom_bar (vertical bars)
+ * Render geom_bar (vertical bars, or horizontal when coord_flip)
  */
 export function renderGeomBar(
   data: DataSource,
   geom: Geom,
   aes: AestheticMapping,
   scales: ScaleContext,
-  canvas: TerminalCanvas
+  canvas: TerminalCanvas,
+  coordType?: string
 ): void {
+  const isFlipped = coordType === 'flip'
+
   // Get plot area boundaries from scale range
   // y range is [bottom, top] (inverted for canvas coordinates)
   const plotBottom = Math.round(scales.y.range[0])
   const plotTop = Math.round(scales.y.range[1])
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
 
   // Calculate base bar width
   let baseBarWidth: number
@@ -647,11 +652,32 @@ export function renderGeomBar(
       ? Math.max(1, Math.floor(point.width * baseBarWidth / (widthParam ?? 0.9)))
       : actualBarWidth
 
-    // Draw vertical bar
-    for (let yPos = top; yPos <= bottom; yPos++) {
-      for (let dx = 0; dx < barWidth; dx++) {
-        const xPos = cx + xOffset + dx - Math.floor(barWidth / 2)
-        canvas.drawChar(xPos, yPos, '█', color)
+    if (isFlipped) {
+      // For flipped coordinates, draw horizontal bars
+      // x now contains the value (bar length), y contains the category
+      const cy = Math.round(scales.y.map(positionType === 'dodge' ? point.yOriginal ?? y : y))
+      let baseline = Math.round(scales.x.map(0))
+      baseline = Math.max(plotLeft, Math.min(plotRight, baseline))
+      const barEnd = Math.round(scales.x.map(x))
+      const left = Math.min(baseline, barEnd)
+      const right = Math.max(baseline, barEnd)
+
+      // Draw horizontal bar
+      for (let xPos = left; xPos <= right; xPos++) {
+        for (let dy = 0; dy < barWidth; dy++) {
+          const yPos = cy + dy - Math.floor(barWidth / 2)
+          if (yPos >= plotTop && yPos <= plotBottom && xPos >= plotLeft && xPos <= plotRight) {
+            canvas.drawChar(xPos, yPos, '█', color)
+          }
+        }
+      }
+    } else {
+      // Draw vertical bar (default)
+      for (let yPos = top; yPos <= bottom; yPos++) {
+        for (let dx = 0; dx < barWidth; dx++) {
+          const xPos = cx + xOffset + dx - Math.floor(barWidth / 2)
+          canvas.drawChar(xPos, yPos, '█', color)
+        }
       }
     }
   }
@@ -785,7 +811,21 @@ export function renderGeomBoxplot(
   scales: ScaleContext,
   canvas: TerminalCanvas
 ): void {
-  const boxWidth = Math.max(1, Math.floor((geom.params.width as number ?? 3)))
+  // Calculate box width based on available space
+  // If x is discrete, calculate spacing between categories
+  const widthFactor = geom.params.width as number ?? 0.75
+  let boxWidth: number
+
+  if (scales.x.type === 'discrete') {
+    const domain = scales.x.domain as string[]
+    const plotWidth = Math.abs(scales.x.range[1] - scales.x.range[0])
+    const spacing = plotWidth / Math.max(1, domain.length)
+    boxWidth = Math.max(3, Math.floor(spacing * widthFactor))
+  } else {
+    // For continuous x, use a reasonable default
+    boxWidth = Math.max(3, Math.floor((geom.params.width as number ?? 5)))
+  }
+
   const showOutliers = geom.params.outliers !== false
 
   const boxColor: RGBA = { r: 79, g: 169, b: 238, a: 1 }
@@ -1010,11 +1050,11 @@ function drawLineClipped(
 export function renderGeomViolin(
   data: DataSource,
   geom: Geom,
-  aes: AestheticMapping,
+  _aes: AestheticMapping,
   scales: ScaleContext,
   canvas: TerminalCanvas
 ): void {
-  const violinWidth = (geom.params.width as number) ?? 0.8
+  const widthFactor = (geom.params.width as number) ?? 0.8
   const alpha = (geom.params.alpha as number) ?? 0.8
   const drawQuantiles = geom.params.draw_quantiles as number[] | null
 
@@ -1027,22 +1067,35 @@ export function renderGeomViolin(
   const violinColor: RGBA = { r: 79, g: 169, b: 238, a: 1 }
   const quantileColor: RGBA = { r: 255, g: 255, b: 255, a: 1 }
 
-  // Group data by x for multiple violins
-  const groups = new Map<string, typeof data>()
-  const groupField = aes.group || aes.x
+  // Data is pre-transformed by stat_ydensity:
+  // { x: groupKey, y: yPosition, density: densityValue, scaled: scaledDensity }
+
+  // Group data by x (the categorical groups)
+  const groups = new Map<string, DataSource>()
 
   for (const row of data) {
-    const key = String(row[groupField] ?? 'default')
+    const key = String(row.x ?? 'default')
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key)!.push(row)
   }
 
+  // Calculate available width per violin based on discrete scale
+  let violinMaxWidth: number
+  if (scales.x.type === 'discrete') {
+    const domain = scales.x.domain as string[]
+    const plotWidth = Math.abs(scales.x.range[1] - scales.x.range[0])
+    const spacing = plotWidth / Math.max(1, domain.length)
+    violinMaxWidth = Math.max(3, Math.floor(spacing * widthFactor))
+  } else {
+    violinMaxWidth = 8
+  }
+
   // Draw each violin
   for (const [groupKey, groupData] of groups) {
-    // Sort by y (density x-axis becomes our y-axis)
+    // Sort by y position
     const sorted = [...groupData].sort((a, b) => {
-      const ay = Number(a[aes.y]) || 0
-      const by = Number(b[aes.y]) || 0
+      const ay = Number(a.y) || 0
+      const by = Number(b.y) || 0
       return ay - by
     })
 
@@ -1054,22 +1107,19 @@ export function renderGeomViolin(
     // Find max density for scaling width
     let maxDensity = 0
     for (const row of sorted) {
-      const density = Number(row['density'] ?? row[aes.x]) || 0
+      const density = Number(row.density) || 0
       if (density > maxDensity) maxDensity = density
     }
 
     if (maxDensity === 0) continue
 
-    // Calculate available width in canvas units
-    const availableWidth = Math.max(1, Math.floor(violinWidth * 4))
-
     // Draw the violin shape
     for (const row of sorted) {
-      const yVal = row[aes.y]
-      const density = Number(row['density'] ?? 1) || 0
+      const yVal = row.y
+      const density = Number(row.density) || 0
 
       const cy = Math.round(scales.y.map(yVal))
-      const halfWidth = Math.max(0, Math.round((density / maxDensity) * availableWidth / 2))
+      const halfWidth = Math.max(0, Math.round((density / maxDensity) * violinMaxWidth / 2))
 
       // Draw both sides of the violin
       const fillColor: RGBA = {
@@ -1089,8 +1139,8 @@ export function renderGeomViolin(
 
     // Draw quantile lines if requested
     if (drawQuantiles && drawQuantiles.length > 0) {
-      // Calculate quantile positions from the original data values
-      const yValues = sorted.map((r) => Number(r[aes.y]) || 0).sort((a, b) => a - b)
+      // Calculate quantile positions from the y values in transformed data
+      const yValues = sorted.map((r) => Number(r.y) || 0).sort((a, b) => a - b)
 
       for (const q of drawQuantiles) {
         const idx = Math.floor(q * (yValues.length - 1))
@@ -1694,7 +1744,8 @@ export function renderGeom(
   geom: Geom,
   aes: AestheticMapping,
   scales: ScaleContext,
-  canvas: TerminalCanvas
+  canvas: TerminalCanvas,
+  coordType?: string
 ): void {
   switch (geom.type) {
     case 'point':
@@ -1714,7 +1765,7 @@ export function renderGeom(
       break
     case 'bar':
     case 'col':
-      renderGeomBar(data, geom, aes, scales, canvas)
+      renderGeomBar(data, geom, aes, scales, canvas, coordType)
       break
     case 'text':
     case 'label':

@@ -8,7 +8,7 @@ export type { StatBinParams, BinResult } from './bin'
 export { stat_boxplot, computeBoxplotStats } from './boxplot'
 export type { StatBoxplotParams, BoxplotResult } from './boxplot'
 
-export { stat_density, computeDensity } from './density'
+export { stat_density, stat_ydensity, computeDensity } from './density'
 export type { StatDensityParams, DensityResult } from './density'
 
 export { stat_smooth, computeSmooth } from './smooth'

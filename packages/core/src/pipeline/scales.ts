@@ -663,7 +663,8 @@ export function buildScaleContext(
   }
 
   // Handle color aesthetic if present
-  if (aes.color) {
+  const colorAesField = aes.color || aes.fill
+  if (colorAesField) {
     // Extract ordering options from user color scale if provided
     const colorOrderOptions: InferDiscreteOptions = {}
     if (userColorScale) {
@@ -679,15 +680,15 @@ export function buildScaleContext(
         if (orderOpts.drop !== undefined) colorOrderOptions.drop = orderOpts.drop
       }
     }
-    const colorDomain = inferDiscreteDomain(data, aes.color, colorOrderOptions)
+    const colorDomain = inferDiscreteDomain(data, colorAesField, colorOrderOptions)
 
     // Use user-provided color scale if available
     if (userColorScale && userColorScale.map) {
       context.color = {
-        aesthetic: 'color',
+        aesthetic: userColorScale.aesthetic || 'color',
         type: userColorScale.type === 'continuous' ? 'continuous' : 'discrete',
         domain: userColorScale.type === 'continuous'
-          ? (userColorScale.domain as [number, number] ?? inferContinuousDomain(data, aes.color))
+          ? (userColorScale.domain as [number, number] ?? inferContinuousDomain(data, colorAesField))
           : colorDomain,
         map: (value: unknown): RGBA => {
           const result = userColorScale.map(value)

@@ -195,3 +195,54 @@ export function stat_density(params: StatDensityParams = {}): Stat {
     },
   }
 }
+
+/**
+ * Create stat_ydensity transformation for violin plots
+ * Groups data by x aesthetic (categorical) and computes density on y values
+ */
+export function stat_ydensity(params: StatDensityParams = {}): Stat {
+  return {
+    type: 'ydensity',
+    compute(data: DataSource, aes: AestheticMapping): DataSource {
+      // Group data by x aesthetic (categorical groups like 'Control', 'Treatment')
+      const groups = new Map<string, number[]>()
+
+      for (const row of data) {
+        const groupKey = String(row[aes.x] ?? 'default')
+        const yVal = row[aes.y]
+
+        if (yVal === null || yVal === undefined) continue
+        const numY = Number(yVal)
+        if (isNaN(numY)) continue
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, [])
+        }
+        groups.get(groupKey)!.push(numY)
+      }
+
+      // Compute density for each group
+      const result: DataSource = []
+
+      for (const [groupKey, yValues] of groups) {
+        if (yValues.length < 2) continue
+
+        // Create temporary data for computeDensity
+        const tempData: DataSource = yValues.map(v => ({ y: v }))
+        const densityResult = computeDensity(tempData, 'y', params)
+
+        // Transform results: x becomes group key, y is the y position, density is computed
+        for (const d of densityResult) {
+          result.push({
+            x: groupKey,
+            y: d.x, // The position along the y-axis (what we computed density for)
+            density: d.density,
+            scaled: d.scaled,
+          })
+        }
+      }
+
+      return result
+    },
+  }
+}

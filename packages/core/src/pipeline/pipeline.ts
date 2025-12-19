@@ -13,7 +13,7 @@ import { renderAxes, renderTitle, renderLegend, renderMultiLegend, renderGridLin
 import type { LegendEntry } from './render-axes'
 import { stat_bin } from '../stats/bin'
 import { stat_boxplot } from '../stats/boxplot'
-import { stat_density } from '../stats/density'
+import { stat_density, stat_ydensity } from '../stats/density'
 import { stat_smooth } from '../stats/smooth'
 import { stat_summary } from '../stats/summary'
 import { computeFacetPanels, calculatePanelLayouts, calculateGridStripLayout, label_value } from '../facets'
@@ -144,6 +144,15 @@ function applyStatTransform(
       adjust: geom.params.adjust as number,
     })
     return densityStat.compute(data, aes)
+  } else if (geom.stat === 'ydensity') {
+    // For violin plots - compute density on y values grouped by x
+    const ydensityStat = stat_ydensity({
+      bw: geom.params.bw as number,
+      kernel: geom.params.kernel as 'gaussian' | 'epanechnikov' | 'rectangular',
+      n: geom.params.n as number,
+      adjust: geom.params.adjust as number,
+    })
+    return ydensityStat.compute(data, aes)
   } else if (geom.stat === 'smooth') {
     const smoothStat = stat_smooth({
       method: geom.params.method as 'lm' | 'loess' | 'lowess',
@@ -289,7 +298,7 @@ export function renderToCanvas(
     let geomData = applyStatTransform(spec.data, geom, spec.aes)
     // Apply coordinate transformation (flip, polar, trans, etc.)
     geomData = applyCoordTransform(geomData, spec.aes, spec.coord)
-    renderGeom(geomData, geom, spec.aes, scales, canvas)
+    renderGeom(geomData, geom, spec.aes, scales, canvas, spec.coord.type)
   }
 
   // Render legend if needed (supports multiple aesthetics)
@@ -665,7 +674,7 @@ function renderPanel(
     let geomData = applyStatTransform(panel.data, geom, spec.aes)
     // Apply coordinate transformation
     geomData = applyCoordTransform(geomData, spec.aes, spec.coord)
-    renderGeom(geomData, geom, spec.aes, scales, canvas)
+    renderGeom(geomData, geom, spec.aes, scales, canvas, spec.coord.type)
   }
 }
 

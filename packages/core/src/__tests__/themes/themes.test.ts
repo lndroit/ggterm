@@ -103,9 +103,9 @@ describe('themeDark', () => {
     expect(theme.panel.border).toBe('rounded')
   })
 
-  it('should have dark grid color', () => {
+  it('should have dot grid character', () => {
     const theme = themeDark()
-    expect(theme.panel.grid.major).toBe('#333')
+    expect(theme.panel.grid.major).toBe('·')
   })
 
   it('should have light axis text', () => {

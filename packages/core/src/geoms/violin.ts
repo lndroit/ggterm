@@ -31,7 +31,7 @@ export interface ViolinOptions {
 export function geom_violin(options: ViolinOptions = {}): Geom {
   return {
     type: 'violin',
-    stat: 'density',
+    stat: 'ydensity',
     params: {
       width: options.width ?? 0.8,
       draw_quantiles: options.draw_quantiles ?? [0.25, 0.5, 0.75],
