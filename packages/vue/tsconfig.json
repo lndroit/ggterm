@@ -15,7 +15,11 @@
     "forceConsistentCasingInFileNames": true,
     "jsx": "preserve",
     "noEmit": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ggterm/core": ["../core/src/index.ts"]
+    }
   },
   "include": ["src/**/*", "src/**/*.vue"],
   "exclude": ["node_modules", "dist"]
