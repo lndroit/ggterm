@@ -208,4 +208,125 @@ const boxPlot = gg(boxplotData)
 console.log(boxPlot.render({ width: 50, height: 18 }))
 console.log('\n')
 
+// Test 10: Density plot
+console.log('=== Test 10: Density Plot ===\n')
+
+import { geom_area } from '../packages/core/src/geoms'
+import { stat_density } from '../packages/core/src/stats'
+
+// Compute density manually and render as area
+const densityData = stat_density({ n: 50 }).compute(histogramData, { x: 'value', y: 'value' })
+
+const densityPlot = gg(densityData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_area())
+  .labs({ title: 'Kernel Density Estimate', x: 'Value', y: 'Density' })
+
+console.log(densityPlot.render({ width: 60, height: 15 }))
+console.log('\n')
+
+// Test 11: Smooth/regression line
+console.log('=== Test 11: Linear Regression ===\n')
+
+import { stat_smooth } from '../packages/core/src/stats'
+
+const regressionData = [
+  { x: 1, y: 2.1 },
+  { x: 2, y: 3.8 },
+  { x: 3, y: 5.2 },
+  { x: 4, y: 7.1 },
+  { x: 5, y: 8.9 },
+  { x: 6, y: 10.2 },
+  { x: 7, y: 12.8 },
+  { x: 8, y: 14.1 },
+]
+
+// Compute smooth line
+const smoothData = stat_smooth({ method: 'lm', n: 20 }).compute(regressionData, { x: 'x', y: 'y' })
+
+const smoothPlot = gg(regressionData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+
+// Add smooth line as second layer
+const smoothLinePlot = gg(smoothData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_line())
+  .labs({ title: 'With Linear Fit', x: 'X', y: 'Y' })
+
+console.log(smoothLinePlot.render({ width: 50, height: 15 }))
+console.log('\n')
+
+// Test 12: Summary statistics
+console.log('=== Test 12: Summary Statistics (Mean per Group) ===\n')
+
+import { stat_summary } from '../packages/core/src/stats'
+
+const summaryInputData = [
+  { group: 'A', value: 10 }, { group: 'A', value: 15 }, { group: 'A', value: 12 },
+  { group: 'B', value: 25 }, { group: 'B', value: 30 }, { group: 'B', value: 28 },
+  { group: 'C', value: 40 }, { group: 'C', value: 45 }, { group: 'C', value: 42 },
+]
+
+// Compute summary
+const summaryData = stat_summary({ funData: 'mean_se' }).compute(summaryInputData, { x: 'group', y: 'value' })
+
+const summaryPlot = gg(summaryData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+  .labs({ title: 'Mean with Standard Error', x: 'Group', y: 'Mean Value' })
+
+console.log(summaryPlot.render({ width: 50, height: 15 }))
+console.log('\n')
+
+// Test 13: Segment geom
+console.log('=== Test 13: Line Segments ===\n')
+
+import { geom_segment } from '../packages/core/src/geoms'
+
+const segmentData = [
+  { x: 1, y: 1, xend: 3, yend: 5 },
+  { x: 2, y: 6, xend: 5, yend: 2 },
+  { x: 4, y: 1, xend: 6, yend: 4 },
+  { x: 5, y: 5, xend: 7, yend: 7 },
+]
+
+const segmentPlot = gg(segmentData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_segment({ arrow: true }))
+  .labs({ title: 'Line Segments with Arrows', x: 'X', y: 'Y' })
+
+console.log(segmentPlot.render({ width: 50, height: 15 }))
+console.log('\n')
+
+// Test 14: LOESS smoothing
+console.log('=== Test 14: LOESS Smoothing ===\n')
+
+const noiseData = [
+  { x: 1, y: 2.3 },
+  { x: 2, y: 4.1 },
+  { x: 3, y: 3.8 },
+  { x: 4, y: 5.2 },
+  { x: 5, y: 4.9 },
+  { x: 6, y: 6.1 },
+  { x: 7, y: 5.5 },
+  { x: 8, y: 7.2 },
+  { x: 9, y: 6.8 },
+  { x: 10, y: 8.1 },
+]
+
+const loessData = stat_smooth({ method: 'loess', span: 0.5, n: 30 }).compute(noiseData, { x: 'x', y: 'y' })
+
+const loessPlot = gg(noiseData)
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_point())
+
+const loessLinePlot = gg([...noiseData, ...loessData])
+  .aes({ x: 'x', y: 'y' })
+  .geom(geom_line())
+  .labs({ title: 'LOESS Smoothing', x: 'X', y: 'Y' })
+
+console.log(loessLinePlot.render({ width: 50, height: 15 }))
+console.log('\n')
+
 console.log('=== All tests completed ===')

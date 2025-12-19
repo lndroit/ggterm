@@ -7,3 +7,12 @@ export type { StatBinParams, BinResult } from './bin'
 
 export { stat_boxplot, computeBoxplotStats } from './boxplot'
 export type { StatBoxplotParams, BoxplotResult } from './boxplot'
+
+export { stat_density, computeDensity } from './density'
+export type { StatDensityParams, DensityResult } from './density'
+
+export { stat_smooth, computeSmooth } from './smooth'
+export type { StatSmoothParams, SmoothResult } from './smooth'
+
+export { stat_summary, computeSummary } from './summary'
+export type { StatSummaryParams, SummaryResult, SummaryFun } from './summary'

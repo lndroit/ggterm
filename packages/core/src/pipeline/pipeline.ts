@@ -11,6 +11,9 @@ import { renderGeom } from './render-geoms'
 import { renderAxes, renderTitle, renderLegend, renderGridLines } from './render-axes'
 import { stat_bin } from '../stats/bin'
 import { stat_boxplot } from '../stats/boxplot'
+import { stat_density } from '../stats/density'
+import { stat_smooth } from '../stats/smooth'
+import { stat_summary } from '../stats/summary'
 
 /**
  * Layout configuration for plot elements
@@ -108,6 +111,31 @@ function applyStatTransform(
       coef: geom.params.coef as number,
     })
     return boxStat.compute(data, aes)
+  } else if (geom.stat === 'density') {
+    const densityStat = stat_density({
+      bw: geom.params.bw as number,
+      kernel: geom.params.kernel as 'gaussian' | 'epanechnikov' | 'rectangular',
+      n: geom.params.n as number,
+      adjust: geom.params.adjust as number,
+    })
+    return densityStat.compute(data, aes)
+  } else if (geom.stat === 'smooth') {
+    const smoothStat = stat_smooth({
+      method: geom.params.method as 'lm' | 'loess' | 'lowess',
+      span: geom.params.span as number,
+      n: geom.params.n as number,
+      se: geom.params.se as boolean,
+      level: geom.params.level as number,
+    })
+    return smoothStat.compute(data, aes)
+  } else if (geom.stat === 'summary') {
+    const summaryStat = stat_summary({
+      fun: geom.params.fun as 'mean' | 'median' | 'min' | 'max' | 'sum',
+      funMin: geom.params.funMin as 'mean' | 'median' | 'min' | 'max' | 'sum',
+      funMax: geom.params.funMax as 'mean' | 'median' | 'min' | 'max' | 'sum',
+      funData: geom.params.funData as 'mean_se' | 'mean_sd' | 'mean_cl_normal' | 'median_range',
+    })
+    return summaryStat.compute(data, aes)
   }
   return data
 }

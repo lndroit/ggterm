@@ -59,16 +59,36 @@ export {
   geom_ribbon,
   geom_histogram,
   geom_boxplot,
+  geom_segment,
+  geom_curve,
 } from './geoms'
 
 // Statistical transformations
 export {
   stat_bin,
   stat_boxplot,
+  stat_density,
+  stat_smooth,
+  stat_summary,
   computeBins,
   computeBoxplotStats,
+  computeDensity,
+  computeSmooth,
+  computeSummary,
 } from './stats'
-export type { StatBinParams, BinResult, StatBoxplotParams, BoxplotResult } from './stats'
+export type {
+  StatBinParams,
+  BinResult,
+  StatBoxplotParams,
+  BoxplotResult,
+  StatDensityParams,
+  DensityResult,
+  StatSmoothParams,
+  SmoothResult,
+  StatSummaryParams,
+  SummaryResult,
+  SummaryFun,
+} from './stats'
 
 // Scales
 export {

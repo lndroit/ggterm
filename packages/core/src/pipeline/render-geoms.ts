@@ -582,6 +582,128 @@ export function renderGeomBoxplot(
 }
 
 /**
+ * Render geom_segment (line segments from x,y to xend,yend)
+ */
+export function renderGeomSegment(
+  data: DataSource,
+  geom: Geom,
+  aes: AestheticMapping,
+  scales: ScaleContext,
+  canvas: TerminalCanvas
+): void {
+  const arrow = geom.params.arrow as boolean ?? false
+  const linetype = geom.params.linetype as string ?? 'solid'
+
+  // Get plot area boundaries for clipping
+  const plotLeft = Math.round(scales.x.range[0])
+  const plotRight = Math.round(scales.x.range[1])
+  const plotTop = Math.round(Math.min(scales.y.range[0], scales.y.range[1]))
+  const plotBottom = Math.round(Math.max(scales.y.range[0], scales.y.range[1]))
+
+  // Choose line character based on linetype
+  let lineChar: string
+  switch (linetype) {
+    case 'dashed':
+      lineChar = '╌'
+      break
+    case 'dotted':
+      lineChar = '·'
+      break
+    case 'solid':
+    default:
+      lineChar = '─'
+  }
+
+  for (const row of data) {
+    const xVal = row[aes.x]
+    const yVal = row[aes.y]
+    const xendVal = row['xend'] ?? row[aes.x]
+    const yendVal = row['yend'] ?? row[aes.y]
+
+    if (xVal === null || xVal === undefined || yVal === null || yVal === undefined) {
+      continue
+    }
+
+    // Map to canvas coordinates
+    const x1 = Math.round(scales.x.map(xVal))
+    const y1 = Math.round(scales.y.map(yVal))
+    const x2 = Math.round(scales.x.map(xendVal))
+    const y2 = Math.round(scales.y.map(yendVal))
+
+    // Get color
+    const color = getPointColor(row, aes, scales.color)
+
+    // Draw the line segment with clipping
+    drawLineClipped(canvas, x1, y1, x2, y2, color, lineChar, plotLeft, plotRight, plotTop, plotBottom)
+
+    // Draw arrow head if requested
+    if (arrow) {
+      // Calculate arrow direction
+      const dx = x2 - x1
+      const dy = y2 - y1
+
+      // Choose arrow character based on direction
+      let arrowChar = '►'
+      if (Math.abs(dx) > Math.abs(dy)) {
+        arrowChar = dx > 0 ? '►' : '◄'
+      } else {
+        arrowChar = dy > 0 ? '▼' : '▲'
+      }
+
+      // Draw arrow at endpoint
+      if (x2 >= plotLeft && x2 <= plotRight && y2 >= plotTop && y2 <= plotBottom) {
+        canvas.drawChar(x2, y2, arrowChar, color)
+      }
+    }
+  }
+}
+
+/**
+ * Draw a line with clipping to plot area
+ */
+function drawLineClipped(
+  canvas: TerminalCanvas,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  color: RGBA,
+  char: string,
+  plotLeft: number,
+  plotRight: number,
+  plotTop: number,
+  plotBottom: number
+): void {
+  const dx = Math.abs(x2 - x1)
+  const dy = Math.abs(y2 - y1)
+  const sx = x1 < x2 ? 1 : -1
+  const sy = y1 < y2 ? 1 : -1
+  let err = dx - dy
+
+  let x = x1
+  let y = y1
+
+  while (true) {
+    // Only draw if within plot bounds
+    if (x >= plotLeft && x <= plotRight && y >= plotTop && y <= plotBottom) {
+      canvas.drawChar(x, y, char, color)
+    }
+
+    if (x === x2 && y === y2) break
+
+    const e2 = 2 * err
+    if (e2 > -dy) {
+      err -= dy
+      x += sx
+    }
+    if (e2 < dx) {
+      err += dx
+      y += sy
+    }
+  }
+}
+
+/**
  * Geometry renderer dispatch
  */
 export function renderGeom(
@@ -620,6 +742,9 @@ export function renderGeom(
       break
     case 'area':
       renderGeomArea(data, geom, aes, scales, canvas)
+      break
+    case 'segment':
+      renderGeomSegment(data, geom, aes, scales, canvas)
       break
     default:
       // Unknown geom type, skip
