@@ -429,7 +429,7 @@ export function renderTitle(
 }
 
 /**
- * Render legend for color aesthetic
+ * Render legend for color aesthetic (legacy function for backward compatibility)
  */
 export function renderLegend(
   canvas: TerminalCanvas,
@@ -488,4 +488,238 @@ export function renderLegend(
       currentY++
     }
   }
+}
+
+/**
+ * Legend entry specification for a single aesthetic
+ */
+export interface LegendEntry {
+  aesthetic: 'color' | 'size' | 'shape' | 'alpha'
+  type: 'discrete' | 'continuous'
+  title?: string
+  domain: string[] | [number, number]
+  map: (value: unknown) => RGBA | number | string
+}
+
+/**
+ * Size symbols for different sizes (index 0-3)
+ */
+const SIZE_SYMBOLS = ['·', '•', '●', '⬤']
+
+/**
+ * Calculate the height needed for a legend entry
+ */
+export function calculateLegendHeight(entry: LegendEntry): number {
+  if (entry.type === 'discrete') {
+    const domain = entry.domain as string[]
+    return (entry.title ? 1 : 0) + domain.length
+  } else {
+    // Continuous legends show 5 gradient stops
+    return (entry.title ? 1 : 0) + 5
+  }
+}
+
+/**
+ * Calculate total height for all legends
+ */
+export function calculateMultiLegendHeight(entries: LegendEntry[]): number {
+  let total = 0
+  for (let i = 0; i < entries.length; i++) {
+    total += calculateLegendHeight(entries[i])
+    // Add spacing between legends
+    if (i < entries.length - 1) {
+      total += 1
+    }
+  }
+  return total
+}
+
+/**
+ * Render multiple legend entries (for multi-aesthetic support)
+ */
+export function renderMultiLegend(
+  canvas: TerminalCanvas,
+  entries: LegendEntry[],
+  x: number,
+  y: number,
+  theme: Theme,
+  width?: number
+): void {
+  if (theme.legend.position === 'none' || entries.length === 0) return
+
+  const legendColor: RGBA = { r: 180, g: 180, b: 180, a: 1 }
+  const defaultColor: RGBA = { r: 79, g: 169, b: 238, a: 1 }
+
+  if (theme.legend.position === 'bottom' && width) {
+    // Horizontal layout for bottom legend
+    renderMultiLegendHorizontal(canvas, entries, x, y, width, legendColor, defaultColor)
+  } else {
+    // Vertical layout for right legend (default)
+    renderMultiLegendVertical(canvas, entries, x, y, legendColor, defaultColor)
+  }
+}
+
+/**
+ * Render legends in horizontal layout (for bottom position)
+ */
+function renderMultiLegendHorizontal(
+  canvas: TerminalCanvas,
+  entries: LegendEntry[],
+  x: number,
+  y: number,
+  width: number,
+  legendColor: RGBA,
+  defaultColor: RGBA
+): void {
+  let currentX = x
+  let currentY = y
+
+  for (const entry of entries) {
+    // Check if we have room for this legend section
+    if (currentX >= x + width) break
+
+    // Legend title (inline)
+    if (entry.title) {
+      canvas.drawString(currentX, currentY, entry.title + ':', legendColor)
+      currentX += entry.title.length + 2
+    }
+
+    if (entry.type === 'discrete') {
+      const domain = entry.domain as string[]
+
+      for (const value of domain) {
+        // Check if we have room
+        const label = value.substring(0, 8)
+        const itemWidth = label.length + 3
+
+        if (currentX + itemWidth > x + width) break
+
+        if (entry.aesthetic === 'color') {
+          const color = entry.map(value) as RGBA
+          canvas.drawChar(currentX, currentY, '●', color)
+        } else if (entry.aesthetic === 'size') {
+          const sizeIndex = entry.map(value) as number
+          const symbol = SIZE_SYMBOLS[Math.min(3, Math.max(0, sizeIndex))]
+          canvas.drawChar(currentX, currentY, symbol, defaultColor)
+        } else {
+          canvas.drawChar(currentX, currentY, '●', defaultColor)
+        }
+
+        canvas.drawString(currentX + 2, currentY, label, legendColor)
+        currentX += itemWidth
+      }
+    } else {
+      // Continuous legend - show gradient
+      const [min, max] = entry.domain as [number, number]
+      const steps = 3
+      for (let i = 0; i <= steps; i++) {
+        if (currentX + 4 > x + width) break
+
+        const t = i / steps
+        const value = min + t * (max - min)
+
+        if (entry.aesthetic === 'color') {
+          const color = entry.map(value) as RGBA
+          canvas.drawChar(currentX, currentY, '●', color)
+        } else if (entry.aesthetic === 'size') {
+          const sizeIndex = Math.floor(t * 3)
+          const symbol = SIZE_SYMBOLS[sizeIndex]
+          canvas.drawChar(currentX, currentY, symbol, defaultColor)
+        }
+        currentX += 2
+      }
+    }
+
+    // Add separator between legends
+    currentX += 2
+  }
+}
+
+/**
+ * Render legends in vertical layout (for right position)
+ */
+function renderMultiLegendVertical(
+  canvas: TerminalCanvas,
+  entries: LegendEntry[],
+  x: number,
+  y: number,
+  legendColor: RGBA,
+  defaultColor: RGBA
+): void {
+  let currentY = y
+
+  for (let ei = 0; ei < entries.length; ei++) {
+    const entry = entries[ei]
+
+    // Legend title
+    if (entry.title) {
+      canvas.drawString(x, currentY, entry.title, legendColor)
+      currentY++
+    }
+
+    if (entry.type === 'discrete') {
+      const domain = entry.domain as string[]
+
+      for (const value of domain) {
+        if (entry.aesthetic === 'color') {
+          const color = entry.map(value) as RGBA
+          canvas.drawChar(x, currentY, '●', color)
+          canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
+        } else if (entry.aesthetic === 'size') {
+          const sizeIndex = entry.map(value) as number
+          const symbol = SIZE_SYMBOLS[Math.min(3, Math.max(0, sizeIndex))]
+          canvas.drawChar(x, currentY, symbol, defaultColor)
+          canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
+        } else if (entry.aesthetic === 'shape') {
+          const shape = entry.map(value) as string
+          canvas.drawChar(x, currentY, shape.charAt(0) || '●', defaultColor)
+          canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
+        } else {
+          canvas.drawChar(x, currentY, '●', defaultColor)
+          canvas.drawString(x + 2, currentY, value.substring(0, 12), legendColor)
+        }
+        currentY++
+      }
+    } else {
+      // Continuous legend - show gradient with values
+      const [min, max] = entry.domain as [number, number]
+      const steps = 4
+
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps
+        const value = min + t * (max - min)
+        const label = formatContinuousLegendValue(value)
+
+        if (entry.aesthetic === 'color') {
+          const color = entry.map(value) as RGBA
+          canvas.drawChar(x, currentY, '●', color)
+          canvas.drawString(x + 2, currentY, label, legendColor)
+        } else if (entry.aesthetic === 'size') {
+          const sizeIndex = Math.floor(t * 3.99)
+          const symbol = SIZE_SYMBOLS[sizeIndex]
+          canvas.drawChar(x, currentY, symbol, defaultColor)
+          canvas.drawString(x + 2, currentY, label, legendColor)
+        }
+        currentY++
+      }
+    }
+
+    // Add spacing between legends
+    if (ei < entries.length - 1) {
+      currentY++
+    }
+  }
+}
+
+/**
+ * Format a continuous legend value for display
+ */
+function formatContinuousLegendValue(value: number): string {
+  if (Math.abs(value) >= 1000 || (Math.abs(value) < 0.01 && value !== 0)) {
+    return value.toExponential(1)
+  }
+  if (Number.isInteger(value)) {
+    return String(value)
+  }
+  return value.toFixed(1)
 }

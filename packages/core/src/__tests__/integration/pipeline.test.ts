@@ -793,4 +793,139 @@ describe('Rendering Pipeline Integration', () => {
       expect(output).toContain('1000')
     })
   })
+
+  describe('multi-aesthetic legends', () => {
+    it('should render legend for color aesthetic', () => {
+      const data = [
+        { x: 1, y: 1, group: 'A' },
+        { x: 2, y: 2, group: 'B' },
+        { x: 3, y: 3, group: 'C' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+
+      const output = plot.render({ width: 60, height: 12 })
+
+      expect(output).toBeDefined()
+      // Should show legend entries for each group
+      expect(output).toContain('A')
+      expect(output).toContain('B')
+      expect(output).toContain('C')
+    })
+
+    it('should render legend for size aesthetic', () => {
+      const data = [
+        { x: 1, y: 1, value: 10 },
+        { x: 2, y: 2, value: 50 },
+        { x: 3, y: 3, value: 100 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', size: 'value' })
+        .geom(geom_point())
+        .labs({ size: 'Value' })
+
+      const output = plot.render({ width: 60, height: 15 })
+
+      expect(output).toBeDefined()
+      // Should show size legend title
+      expect(output).toContain('Value')
+      // Should contain the plot
+      expect(output.length).toBeGreaterThan(0)
+    })
+
+    it('should render both color and size legends together', () => {
+      const data = [
+        { x: 1, y: 1, group: 'A', value: 10 },
+        { x: 2, y: 2, group: 'B', value: 50 },
+        { x: 3, y: 3, group: 'A', value: 100 },
+        { x: 4, y: 4, group: 'B', value: 25 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group', size: 'value' })
+        .geom(geom_point())
+        .labs({ color: 'Group', size: 'Value' })
+
+      const output = plot.render({ width: 70, height: 20 })
+
+      expect(output).toBeDefined()
+      // Should show both legend titles
+      expect(output).toContain('Group')
+      expect(output).toContain('Value')
+      // Should show color categories
+      expect(output).toContain('A')
+      expect(output).toContain('B')
+    })
+
+    it('should render color legend with bottom position', () => {
+      const data = [
+        { x: 1, y: 1, group: 'Alpha' },
+        { x: 2, y: 2, group: 'Beta' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .theme({ legend: { position: 'bottom' } })
+
+      const output = plot.render({ width: 60, height: 12 })
+
+      expect(output).toBeDefined()
+      // Should contain the legend entries
+      expect(output).toContain('Alpha')
+      expect(output).toContain('Beta')
+    })
+
+    it('should render multi-legend with bottom position', () => {
+      const data = [
+        { x: 1, y: 1, group: 'X', val: 5 },
+        { x: 2, y: 2, group: 'Y', val: 15 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group', size: 'val' })
+        .geom(geom_point())
+        .theme({ legend: { position: 'bottom' } })
+        .labs({ color: 'Cat', size: 'Size' })
+
+      const output = plot.render({ width: 80, height: 15 })
+
+      expect(output).toBeDefined()
+      // Should contain legend entries
+      expect(output).toContain('X')
+      expect(output).toContain('Y')
+    })
+
+    it('should hide legend when position is none', () => {
+      const data = [
+        { x: 1, y: 1, group: 'A' },
+        { x: 2, y: 2, group: 'B' },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', color: 'group' })
+        .geom(geom_point())
+        .theme({ legend: { position: 'none' } })
+
+      const output = plot.render({ width: 40, height: 10 })
+
+      expect(output).toBeDefined()
+      // Plot should render but without extra legend margin
+      expect(output.length).toBeGreaterThan(0)
+    })
+
+    it('should render size-only legend without color', () => {
+      const data = [
+        { x: 1, y: 1, magnitude: 1 },
+        { x: 2, y: 3, magnitude: 5 },
+        { x: 3, y: 2, magnitude: 10 },
+      ]
+      const plot = gg(data)
+        .aes({ x: 'x', y: 'y', size: 'magnitude' })
+        .geom(geom_point())
+        .labs({ size: 'Magnitude' })
+
+      const output = plot.render({ width: 60, height: 15 })
+
+      expect(output).toBeDefined()
+      expect(output).toContain('Magnitude')
+    })
+  })
 })

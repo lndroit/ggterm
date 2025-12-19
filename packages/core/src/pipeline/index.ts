@@ -25,6 +25,10 @@ export {
   renderAxes,
   renderTitle,
   renderLegend,
+  renderMultiLegend,
+  calculateLegendHeight,
+  calculateMultiLegendHeight,
   calculateTicks,
   formatTick,
 } from './render-axes'
+export type { LegendEntry } from './render-axes'

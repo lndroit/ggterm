@@ -9,7 +9,8 @@ import { TerminalCanvas, createCanvas } from '../canvas/canvas'
 import { buildScaleContext, inferContinuousDomain, niceDomain } from './scales'
 import type { ScaleContext } from './scales'
 import { renderGeom } from './render-geoms'
-import { renderAxes, renderTitle, renderLegend, renderGridLines, calculateTicks, formatTick } from './render-axes'
+import { renderAxes, renderTitle, renderLegend, renderMultiLegend, renderGridLines, calculateTicks, formatTick } from './render-axes'
+import type { LegendEntry } from './render-axes'
 import { stat_bin } from '../stats/bin'
 import { stat_boxplot } from '../stats/boxplot'
 import { stat_density } from '../stats/density'
@@ -57,8 +58,9 @@ export function calculateLayout(
   const hasTitle = !!spec.labels.title
   const hasXLabel = !!spec.labels.x
   const hasYLabel = !!spec.labels.y
+  // Check for any legend-worthy aesthetics (color or size)
   const hasLegend =
-    spec.theme.legend.position !== 'none' && !!spec.aes.color
+    spec.theme.legend.position !== 'none' && (!!spec.aes.color || !!spec.aes.size)
 
   // Calculate margins
   const legendPosition = spec.theme.legend.position
@@ -234,19 +236,43 @@ export function renderToCanvas(
     renderGeom(geomData, geom, spec.aes, scales, canvas)
   }
 
-  // Render legend if needed
-  if (layout.legendArea && scales.color) {
-    const colorDomain = scales.color.domain as string[]
-    renderLegend(
-      canvas,
-      colorDomain,
-      (v) => scales.color!.map(v),
-      layout.legendArea.x,
-      layout.legendArea.y,
-      spec.labels.color,
-      spec.theme,
-      layout.legendArea.width
-    )
+  // Render legend if needed (supports multiple aesthetics)
+  if (layout.legendArea) {
+    const legendEntries: LegendEntry[] = []
+
+    // Add color legend entry if color aesthetic is mapped
+    if (scales.color) {
+      legendEntries.push({
+        aesthetic: 'color',
+        type: scales.color.type,
+        title: spec.labels.color,
+        domain: scales.color.domain,
+        map: (v) => scales.color!.map(v),
+      })
+    }
+
+    // Add size legend entry if size aesthetic is mapped
+    if (scales.size) {
+      legendEntries.push({
+        aesthetic: 'size',
+        type: 'continuous',
+        title: spec.labels.size,
+        domain: scales.size.domain,
+        map: (v) => scales.size!.map(v),
+      })
+    }
+
+    // Render all legends
+    if (legendEntries.length > 0) {
+      renderMultiLegend(
+        canvas,
+        legendEntries,
+        layout.legendArea.x,
+        layout.legendArea.y,
+        spec.theme,
+        layout.legendArea.width
+      )
+    }
   }
 
   return canvas
@@ -279,7 +305,7 @@ function renderFacetedToCanvas(
   }
 
   const hasTitle = !!spec.labels.title
-  const hasLegend = spec.theme.legend.position !== 'none' && !!spec.aes.color
+  const hasLegend = spec.theme.legend.position !== 'none' && (!!spec.aes.color || !!spec.aes.size)
   const legendPosition = spec.theme.legend.position
 
   // Calculate margins
@@ -325,42 +351,59 @@ function renderFacetedToCanvas(
     canvas.drawString(0, yLabelY, displayLabel, axisColor)
   }
 
-  // Render legend if needed
-  if (hasLegend && spec.aes.color) {
-    // Get unique color values from all panels
-    const colorValues = new Set<string>()
-    for (const panel of panels) {
-      for (const row of panel.data) {
-        const value = row[spec.aes.color]
-        if (value !== null && value !== undefined) {
-          colorValues.add(String(value))
-        }
-      }
+  // Render legend if needed (supports multiple aesthetics)
+  if (hasLegend) {
+    const legendEntries: LegendEntry[] = []
+
+    // Add color legend entry if color aesthetic is mapped
+    if (sharedScales.color) {
+      legendEntries.push({
+        aesthetic: 'color',
+        type: sharedScales.color.type,
+        title: spec.labels.color,
+        domain: sharedScales.color.domain,
+        map: (v) => sharedScales.color!.map(v),
+      })
     }
 
-    if (sharedScales.color) {
-      const colorDomain = sharedScales.color.domain as string[]
+    // Add size legend entry if size aesthetic is mapped
+    // Build size scale from all data
+    if (spec.aes.size) {
+      const { inferContinuousDomain, createResolvedSizeScale } = require('./scales')
+      const allData: DataSource = []
+      for (const panel of panels) {
+        allData.push(...panel.data)
+      }
+      const sizeDomain = inferContinuousDomain(allData, spec.aes.size)
+      const sizeScale = createResolvedSizeScale(sizeDomain)
+      legendEntries.push({
+        aesthetic: 'size',
+        type: 'continuous',
+        title: spec.labels.size,
+        domain: sizeDomain,
+        map: (v) => sizeScale.map(v),
+      })
+    }
+
+    // Render all legends
+    if (legendEntries.length > 0) {
       const legendPosition = spec.theme.legend.position
 
       if (legendPosition === 'bottom') {
-        renderLegend(
+        renderMultiLegend(
           canvas,
-          colorDomain,
-          (v) => sharedScales.color!.map(v),
+          legendEntries,
           margins.left,
           height - 2,
-          spec.labels.color,
           spec.theme,
           width - margins.left - margins.right
         )
       } else {
-        renderLegend(
+        renderMultiLegend(
           canvas,
-          colorDomain,
-          (v) => sharedScales.color!.map(v),
+          legendEntries,
           width - margins.right + 1,
           margins.top,
-          spec.labels.color,
           spec.theme,
           margins.right - 1
         )
