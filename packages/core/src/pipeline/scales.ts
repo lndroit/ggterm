@@ -364,6 +364,8 @@ export function createResolvedDiscreteScale(
 export interface ScaleContext {
   x: ResolvedScale
   y: ResolvedScale
+  /** Secondary y-axis scale */
+  y2?: ResolvedScale
   color?: ResolvedColorScale
   size?: ResolvedSizeScale
 }
@@ -635,6 +637,30 @@ export function buildScaleContext(
   }
 
   const context: ScaleContext = { x, y }
+
+  // Handle secondary y-axis if present
+  if (aes.y2) {
+    const userY2Scale = userScales.find((s) => s.aesthetic === 'y2')
+    const y2Trans = userY2Scale?.trans ?? 'identity'
+    const y2Domain = userY2Scale?.domain as [number, number] | undefined ??
+      computeDomain(data, aes.y2, y2Trans)
+
+    // Create y2 scale with same range as y (inverted for canvas)
+    const y2 = createResolvedContinuousScale(
+      'y2',
+      y2Domain,
+      [plotArea.y + plotArea.height - 1, plotArea.y], // Same inverted range
+      y2Trans
+    )
+    // Apply user-provided breaks and labels
+    if (userY2Scale?.breaks) {
+      y2.breaks = userY2Scale.breaks
+    }
+    if (userY2Scale?.labels) {
+      y2.labels = userY2Scale.labels
+    }
+    context.y2 = y2
+  }
 
   // Handle color aesthetic if present
   if (aes.color) {

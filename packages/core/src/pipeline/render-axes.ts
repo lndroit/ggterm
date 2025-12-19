@@ -303,11 +303,72 @@ export function renderLeftAxis(
 }
 
 /**
+ * Render right (secondary y) axis
+ */
+export function renderRightAxis(
+  canvas: TerminalCanvas,
+  scale: ResolvedScale,
+  x: number,
+  yStart: number,
+  yEnd: number,
+  label: string | undefined,
+  _theme: Theme,
+  maxWidth: number = 8
+): void {
+  const axisColor: RGBA = { r: 180, g: 180, b: 180, a: 1 }
+
+  // Draw axis line (vertical)
+  const top = Math.min(yStart, yEnd)
+  const bottom = Math.max(yStart, yEnd)
+  canvas.drawVLine(x, top, bottom - top + 1, '│', axisColor)
+
+  // Calculate and draw ticks
+  if (scale.type === 'continuous') {
+    const domain = scale.domain as [number, number]
+    // Use custom breaks if provided, otherwise calculate nice ticks
+    const ticks = scale.breaks ?? (() => {
+      // Request more ticks - aim for one every ~3 rows
+      const targetTicks = Math.max(3, Math.floor((bottom - top) / 3))
+      // Pass transform functions for proper tick calculation on transformed scales
+      return calculateTicks(domain, targetTicks, scale.transform, scale.invert)
+    })()
+
+    for (let i = 0; i < ticks.length; i++) {
+      const tickValue = ticks[i]
+      const y = Math.round(scale.toCanvas(scale.normalize(tickValue)))
+      if (y >= top && y <= bottom) {
+        // Tick mark (on left side of the axis line, pointing into the plot)
+        canvas.drawChar(x, y, '├', axisColor)
+
+        // Tick label - use custom label if provided, otherwise format the value
+        const tickLabel = scale.labels?.[i] ?? formatTick(tickValue)
+        // Labels go to the right of the axis
+        const labelX = x + 2
+        canvas.drawString(labelX, y, tickLabel.substring(0, maxWidth - 2), axisColor)
+      }
+    }
+  }
+
+  // Draw axis label horizontally in the right margin
+  if (label) {
+    // Truncate label if too long for margin
+    const maxLabelLen = maxWidth - 1
+    const displayLabel = label.length > maxLabelLen
+      ? label.substring(0, maxLabelLen)
+      : label
+    // Center vertically, place to the right of tick labels
+    const labelY = top + Math.floor((bottom - top) / 2)
+    // For right axis, we put the label in the far right
+    canvas.drawString(x + 1, labelY - 1, displayLabel, axisColor)
+  }
+}
+
+/**
  * Render all axes for a plot
  */
 export function renderAxes(
   canvas: TerminalCanvas,
-  scales: { x: ResolvedScale; y: ResolvedScale },
+  scales: { x: ResolvedScale; y: ResolvedScale; y2?: ResolvedScale },
   plotArea: { x: number; y: number; width: number; height: number },
   labels: Labels,
   theme: Theme
@@ -334,13 +395,34 @@ export function renderAxes(
     theme
   )
 
-  // Draw corner
+  // Draw left corner
   canvas.drawChar(plotArea.x - 1, plotArea.y + plotArea.height, '└', {
     r: 180,
     g: 180,
     b: 180,
     a: 1,
   })
+
+  // Right axis (y2) - secondary y-axis
+  if (scales.y2) {
+    renderRightAxis(
+      canvas,
+      scales.y2,
+      plotArea.x + plotArea.width,
+      plotArea.y,
+      plotArea.y + plotArea.height - 1,
+      labels.y2,
+      theme
+    )
+
+    // Draw right corner
+    canvas.drawChar(plotArea.x + plotArea.width, plotArea.y + plotArea.height, '┘', {
+      r: 180,
+      g: 180,
+      b: 180,
+      a: 1,
+    })
+  }
 }
 
 /**

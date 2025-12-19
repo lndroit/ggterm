@@ -11,6 +11,11 @@ export {
   scale_y_sqrt,
   scale_x_reverse,
   scale_y_reverse,
+  // Secondary y-axis scales
+  scale_y2_continuous,
+  scale_y2_log10,
+  scale_y2_sqrt,
+  scale_y2_reverse,
   type ContinuousScaleOptions,
 } from './continuous'
 

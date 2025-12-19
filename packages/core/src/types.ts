@@ -10,6 +10,8 @@ export type DataSource = DataRecord[]
 export interface AestheticMapping {
   x: string
   y: string
+  /** Secondary y-axis data field */
+  y2?: string
   color?: string
   fill?: string
   size?: string
@@ -129,6 +131,8 @@ export interface Labels {
   caption?: string
   x?: string
   y?: string
+  /** Label for secondary y-axis */
+  y2?: string
   color?: string
   fill?: string
   size?: string

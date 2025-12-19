@@ -58,15 +58,25 @@ export function calculateLayout(
   const hasTitle = !!spec.labels.title
   const hasXLabel = !!spec.labels.x
   const hasYLabel = !!spec.labels.y
+  const hasY2 = !!spec.aes.y2 || spec.scales.some(s => s.aesthetic === 'y2')
+  const hasY2Label = !!spec.labels.y2
   // Check for any legend-worthy aesthetics (color or size)
   const hasLegend =
     spec.theme.legend.position !== 'none' && (!!spec.aes.color || !!spec.aes.size)
 
   // Calculate margins
   const legendPosition = spec.theme.legend.position
+  // Right margin: legend takes priority, then y2 axis, then minimal
+  let rightMargin = 1
+  if (hasLegend && legendPosition === 'right') {
+    rightMargin = 15
+  } else if (hasY2) {
+    // Reserve space for secondary y-axis: ticks (6) + label (2) + padding (1)
+    rightMargin = 8 + (hasY2Label ? 2 : 0)
+  }
   const margins = {
     top: hasTitle ? 2 : 1,
-    right: hasLegend && legendPosition === 'right' ? 15 : 1,
+    right: rightMargin,
     bottom: 2 + (hasXLabel ? 1 : 0) + (hasLegend && legendPosition === 'bottom' ? 2 : 0),
     left: 8 + (hasYLabel ? 2 : 0),
   }

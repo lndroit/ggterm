@@ -132,3 +132,39 @@ export function scale_y_reverse(
 ): Scale {
   return createContinuousScale('y', { ...options, trans: 'reverse' })
 }
+
+/**
+ * Secondary y-axis continuous scale
+ */
+export function scale_y2_continuous(
+  options: ContinuousScaleOptions = {}
+): Scale {
+  return createContinuousScale('y2', options)
+}
+
+/**
+ * Secondary y-axis log10 scale
+ */
+export function scale_y2_log10(
+  options: Omit<ContinuousScaleOptions, 'trans'> = {}
+): Scale {
+  return createContinuousScale('y2', { ...options, trans: 'log10' })
+}
+
+/**
+ * Secondary y-axis sqrt scale
+ */
+export function scale_y2_sqrt(
+  options: Omit<ContinuousScaleOptions, 'trans'> = {}
+): Scale {
+  return createContinuousScale('y2', { ...options, trans: 'sqrt' })
+}
+
+/**
+ * Secondary y-axis reversed scale
+ */
+export function scale_y2_reverse(
+  options: Omit<ContinuousScaleOptions, 'trans'> = {}
+): Scale {
+  return createContinuousScale('y2', { ...options, trans: 'reverse' })
+}
