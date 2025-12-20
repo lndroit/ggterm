@@ -6,6 +6,13 @@ node_modules/
 # Build outputs
 dist/
 *.tsbuildinfo
+.svelte-kit/
+
+# Generated files in src (from tsc --outDir .)
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
 
 # IDE
 .idea/

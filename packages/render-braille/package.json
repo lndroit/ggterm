@@ -1,6 +1,6 @@
 {
   "name": "@ggterm/render-braille",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Braille dot matrix renderer for ggterm",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,10 +26,19 @@
     "terminal",
     "renderer"
   ],
-  "author": "",
+  "author": "Scott Handley",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/handleylab/ggterm.git",
+    "directory": "packages/render-braille"
+  },
+  "homepage": "https://github.com/handleylab/ggterm#readme",
+  "bugs": {
+    "url": "https://github.com/handleylab/ggterm/issues"
+  },
   "peerDependencies": {
-    "@ggterm/core": "^0.0.1"
+    "@ggterm/core": "^0.2.0"
   },
   "devDependencies": {
     "@ggterm/core": "workspace:*",

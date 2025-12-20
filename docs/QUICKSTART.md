@@ -318,7 +318,7 @@ const output = plot.render({
 
 ```bash
 # Clone the repo
-git clone https://github.com/your/ggterm.git
+git clone https://github.com/handleylab/ggterm.git
 cd ggterm
 
 # Install dependencies

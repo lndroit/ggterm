@@ -1,6 +1,6 @@
 {
   "name": "ggterm",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "private": true,
   "description": "A Grammar of Graphics for Terminal User Interfaces",
   "workspaces": [
@@ -28,11 +28,15 @@
     "@typescript-eslint/parser": "^6.19.0",
     "prettier": "^3.2.0"
   },
-  "author": "",
+  "author": "Scott Handley",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/ggterm.git"
+    "url": "https://github.com/handleylab/ggterm.git"
+  },
+  "homepage": "https://github.com/handleylab/ggterm#readme",
+  "bugs": {
+    "url": "https://github.com/handleylab/ggterm/issues"
   },
   "keywords": [
     "grammar-of-graphics",

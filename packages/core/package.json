@@ -1,6 +1,6 @@
 {
   "name": "@ggterm/core",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Grammar of Graphics engine for terminals",
   "type": "module",
   "main": "./dist/index.js",
@@ -32,8 +32,17 @@
     "terminal",
     "charts"
   ],
-  "author": "",
+  "author": "Scott Handley",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/handleylab/ggterm.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/handleylab/ggterm#readme",
+  "bugs": {
+    "url": "https://github.com/handleylab/ggterm/issues"
+  },
   "peerDependencies": {},
   "devDependencies": {
     "typescript": "^5.3.0",
