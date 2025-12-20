@@ -23,8 +23,7 @@
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "keywords": [
     "grammar-of-graphics",

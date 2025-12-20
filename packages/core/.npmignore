@@ -1,0 +1,12 @@
+# Test files
+src/__tests__/
+**/*.test.ts
+**/*.spec.ts
+
+# Development files
+tsconfig.json
+.eslintrc*
+.prettierrc*
+
+# Demo
+src/demo.ts
