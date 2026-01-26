@@ -30,8 +30,9 @@ describe('position_identity', () => {
     const result = applyPositionAdjustment(data, aes, position_identity())
 
     expect(result).toHaveLength(2)
-    expect(result[0].x).toBe(0) // 'A' becomes 0 because it's not a number
+    expect(result[0].x).toBe('A') // Categorical x values are preserved
     expect(result[0].y).toBe(10)
+    expect(result[1].x).toBe('B')
     expect(result[1].y).toBe(20)
   })
 })

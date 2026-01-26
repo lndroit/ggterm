@@ -33,16 +33,16 @@ export interface Position {
 export interface AdjustedPoint {
   /** Original row data */
   row: Record<string, unknown>
-  /** Adjusted x position (in data space) */
-  x: number
+  /** Adjusted x position (in data space) - can be numeric or categorical */
+  x: number | string
   /** Adjusted y position (in data space) */
   y: number
   /** For stacked/filled: bottom y value */
   ymin?: number
   /** For stacked/filled: top y value */
   ymax?: number
-  /** Original x value before adjustment */
-  xOriginal: number
+  /** Original x value before adjustment - can be numeric or categorical */
+  xOriginal: number | string
   /** Original y value before adjustment */
   yOriginal: number
   /** Group identifier */
@@ -248,8 +248,11 @@ export function applyPositionAdjustment(
  */
 function applyIdentity(data: DataSource, aes: AestheticMapping): AdjustedPoint[] {
   return data.map(row => {
-    const x = Number(row[aes.x]) || 0
-    const y = Number(row[aes.y]) || 0
+    const rawX = row[aes.x]
+    const rawY = row[aes.y]
+    // Preserve string x values for categorical data, convert numbers
+    const x = typeof rawX === 'string' ? rawX : (Number(rawX) || 0)
+    const y = Number(rawY) || 0
     return {
       row,
       x,
@@ -332,7 +335,8 @@ function applyStack(
   const xGroups = groupByX(data, aes)
 
   for (const [xVal, groups] of xGroups) {
-    const xBase = Number(xVal) || 0
+    // Preserve string x values for categorical data
+    const xBase: number | string = typeof xVal === 'string' && isNaN(Number(xVal)) ? xVal : (Number(xVal) || 0)
 
     // Calculate total for this x value (for normalization)
     let total = 0

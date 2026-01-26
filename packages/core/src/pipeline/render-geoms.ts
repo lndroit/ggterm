@@ -676,7 +676,10 @@ export function renderGeomBar(
       for (let yPos = top; yPos <= bottom; yPos++) {
         for (let dx = 0; dx < barWidth; dx++) {
           const xPos = cx + xOffset + dx - Math.floor(barWidth / 2)
-          canvas.drawChar(xPos, yPos, '█', color)
+          // Only draw within plot boundaries
+          if (xPos >= plotLeft && xPos <= plotRight) {
+            canvas.drawChar(xPos, yPos, '█', color)
+          }
         }
       }
     }

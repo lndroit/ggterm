@@ -13,6 +13,7 @@ import { renderAxes, renderTitle, renderLegend, renderMultiLegend, renderGridLin
 import type { LegendEntry } from './render-axes'
 import { stat_bin } from '../stats/bin'
 import { stat_boxplot } from '../stats/boxplot'
+import { stat_count } from '../stats/count'
 import { stat_density, stat_ydensity } from '../stats/density'
 import { stat_smooth } from '../stats/smooth'
 import { stat_summary } from '../stats/summary'
@@ -170,6 +171,11 @@ function applyStatTransform(
       funData: geom.params.funData as 'mean_se' | 'mean_sd' | 'mean_cl_normal' | 'median_range',
     })
     return summaryStat.compute(data, aes)
+  } else if (geom.stat === 'count') {
+    const countStat = stat_count({})
+    const counts = countStat.compute(data, aes)
+    // Map count results to y field for bar rendering
+    return counts.map(c => ({ x: c.x, y: c.count, count: c.count }))
   }
   return data
 }
@@ -260,6 +266,13 @@ export function renderToCanvas(
       scaleData = [...scaleData, ...allYValues]
       scaleAes = { ...spec.aes, x: 'x', y: 'y' }
       break
+    } else if (geom.stat === 'count') {
+      scaleData = applyStatTransform(spec.data, geom, spec.aes)
+      // Count stat outputs x (categories) and y (counts)
+      // Add y=0 baseline so bar charts always start from 0
+      scaleData = [...scaleData, { x: scaleData[0]?.x ?? '', y: 0 }]
+      scaleAes = { ...spec.aes, x: 'x', y: 'y' }
+      break
     }
   }
 
@@ -317,8 +330,14 @@ export function renderToCanvas(
     } else {
       // Apply statistical transformation if needed
       geomData = applyStatTransform(spec.data, geom, spec.aes)
+
+      // Update geomAes for stat-transformed data that uses different field names
+      if (geom.stat === 'bin' || geom.stat === 'boxplot' || geom.stat === 'count') {
+        geomAes = { ...spec.aes, x: 'x', y: 'y' }
+      }
+
       // Apply coordinate transformation (flip, polar, trans, etc.)
-      geomData = applyCoordTransform(geomData, spec.aes, spec.coord)
+      geomData = applyCoordTransform(geomData, geomAes, spec.coord)
     }
 
     renderGeom(geomData, geom, geomAes, scales, canvas, spec.coord.type)
