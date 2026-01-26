@@ -1,17 +1,43 @@
 #!/usr/bin/env bun
 /**
  * Simple CLI for creating plots
- * Usage: bun cli-plot.ts <data.csv> <x> <y> [color] [title]
+ * Usage: bun cli-plot.ts <data.csv> <x> <y> [color] [title] [geom]
  */
 
-import { gg, geom_point, geom_line, geom_histogram, geom_boxplot, geom_bar } from './index'
+import {
+  gg,
+  geom_point,
+  geom_line,
+  geom_path,
+  geom_step,
+  geom_bar,
+  geom_histogram,
+  geom_boxplot,
+  geom_violin,
+  geom_area,
+  geom_rug,
+  geom_errorbar,
+  geom_smooth,
+  geom_segment,
+  geom_rect,
+  geom_tile,
+  geom_text,
+  geom_contour,
+} from './index'
 import { readFileSync } from 'fs'
+
+const GEOM_TYPES = [
+  'point', 'line', 'path', 'step', 'bar', 'histogram', 'boxplot',
+  'violin', 'area', 'rug', 'errorbar', 'smooth', 'segment', 'rect',
+  'tile', 'text', 'contour'
+]
 
 const args = process.argv.slice(2)
 
 if (args.length < 3) {
   console.error('Usage: bun cli-plot.ts <data.csv> <x> <y> [color] [title] [geom]')
-  console.error('  geom: point (default), line, histogram, boxplot, bar')
+  console.error(`  geom: ${GEOM_TYPES.join(', ')}`)
+  console.error('  (default: point)')
   process.exit(1)
 }
 
@@ -53,15 +79,52 @@ switch (geomType) {
   case 'line':
     plot = plot.geom(geom_line())
     break
+  case 'path':
+    plot = plot.geom(geom_path())
+    break
+  case 'step':
+    plot = plot.geom(geom_step())
+    break
   case 'histogram':
     plot = plot.geom(geom_histogram({ bins: 20 }))
     break
   case 'boxplot':
     plot = plot.geom(geom_boxplot())
     break
+  case 'violin':
+    plot = plot.geom(geom_violin())
+    break
   case 'bar':
     plot = plot.geom(geom_bar())
     break
+  case 'area':
+    plot = plot.geom(geom_area())
+    break
+  case 'rug':
+    plot = plot.geom(geom_rug())
+    break
+  case 'errorbar':
+    plot = plot.geom(geom_errorbar())
+    break
+  case 'smooth':
+    plot = plot.geom(geom_smooth())
+    break
+  case 'segment':
+    plot = plot.geom(geom_segment())
+    break
+  case 'rect':
+    plot = plot.geom(geom_rect())
+    break
+  case 'tile':
+    plot = plot.geom(geom_tile())
+    break
+  case 'text':
+    plot = plot.geom(geom_text())
+    break
+  case 'contour':
+    plot = plot.geom(geom_contour())
+    break
+  case 'point':
   default:
     plot = plot.geom(geom_point())
 }
