@@ -448,14 +448,20 @@ function handlePlot(args: string[]): void {
  */
 function handleExport(outputFile?: string): void {
   const ggTermDir = join(process.cwd(), '.ggterm')
-  const specPath = join(ggTermDir, 'last-plot-vegalite.json')
+  const plotSpecPath = join(ggTermDir, 'last-plot.json')
 
-  if (!existsSync(specPath)) {
+  if (!existsSync(plotSpecPath)) {
     console.error('No plot found. Create a plot first using the CLI.')
     process.exit(1)
   }
 
-  const spec = JSON.parse(readFileSync(specPath, 'utf-8'))
+  // Read PlotSpec and convert to Vega-Lite with interactivity enabled
+  const { plotSpecToVegaLite } = require('./export')
+  const plotSpec = JSON.parse(readFileSync(plotSpecPath, 'utf-8'))
+  const spec = plotSpecToVegaLite(plotSpec, {
+    interactive: true, // Enable tooltips, hover, legend filter
+  })
+
   const title = typeof spec.title === 'string' ? spec.title : spec.title?.text || 'Plot'
   const output = outputFile || 'plot-export.html'
 

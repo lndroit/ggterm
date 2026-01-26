@@ -16,7 +16,15 @@ export interface VegaLiteSpec {
   mark?: string | { type: string; [key: string]: unknown }
   encoding?: Record<string, unknown>
   layer?: VegaLiteLayer[]
+  params?: VegaLiteParam[]
   config?: Record<string, unknown>
+}
+
+interface VegaLiteParam {
+  name: string
+  select?: string | { type: string; [key: string]: unknown }
+  bind?: string | Record<string, unknown>
+  value?: unknown
 }
 
 interface VegaLiteLayer {
@@ -269,10 +277,104 @@ function getPublicationConfig(): Record<string, unknown> {
   }
 }
 
+export interface InteractiveOptions {
+  tooltip?: boolean      // Show data on hover
+  hover?: boolean        // Highlight on hover
+  brush?: boolean        // Drag to select region
+  zoom?: boolean         // Scroll to zoom, drag to pan
+  legendFilter?: boolean // Click legend to filter
+}
+
 export interface ExportOptions {
   width?: number
   height?: number
   publication?: boolean // Apply publication-quality defaults
+  interactive?: boolean | InteractiveOptions // Enable interactivity
+}
+
+/**
+ * Build interactivity params and encoding modifications
+ */
+function buildInteractivity(
+  options: boolean | InteractiveOptions,
+  aes: AestheticMapping,
+  data: Record<string, unknown>[]
+): { params: VegaLiteParam[]; encodingMods: Record<string, unknown> } {
+  const params: VegaLiteParam[] = []
+  const encodingMods: Record<string, unknown> = {}
+
+  // Normalize options
+  const opts: InteractiveOptions =
+    options === true
+      ? { tooltip: true, hover: true, zoom: false, brush: false, legendFilter: true }
+      : options
+
+  // Hover highlight
+  if (opts.hover) {
+    params.push({
+      name: 'hover',
+      select: { type: 'point', on: 'pointerover', clear: 'pointerout' },
+    })
+    encodingMods.opacity = {
+      condition: { param: 'hover', empty: false, value: 1 },
+      value: 0.7,
+    }
+    encodingMods.strokeWidth = {
+      condition: { param: 'hover', empty: false, value: 3 },
+      value: 1,
+    }
+  }
+
+  // Brush selection
+  if (opts.brush) {
+    params.push({
+      name: 'brush',
+      select: { type: 'interval' },
+    })
+    // If we already have opacity from hover, combine them
+    if (!encodingMods.opacity) {
+      encodingMods.opacity = {
+        condition: { param: 'brush', value: 1 },
+        value: 0.3,
+      }
+    }
+  }
+
+  // Zoom and pan
+  if (opts.zoom) {
+    params.push({
+      name: 'grid',
+      select: { type: 'interval' },
+      bind: 'scales',
+    })
+  }
+
+  // Legend filter (click legend to filter data)
+  if (opts.legendFilter && aes.color) {
+    params.push({
+      name: 'legendFilter',
+      select: { type: 'point', fields: [aes.color] },
+      bind: 'legend',
+    })
+    if (!encodingMods.opacity) {
+      encodingMods.opacity = {
+        condition: { param: 'legendFilter', value: 1 },
+        value: 0.2,
+      }
+    }
+  }
+
+  // Tooltip - build from all mapped aesthetics
+  if (opts.tooltip) {
+    const tooltipFields: Array<{ field: string; type: string; title?: string }> = []
+    if (aes.x) tooltipFields.push({ field: aes.x, type: inferFieldType(data, aes.x) })
+    if (aes.y) tooltipFields.push({ field: aes.y, type: inferFieldType(data, aes.y) })
+    if (aes.color) tooltipFields.push({ field: aes.color, type: inferFieldType(data, aes.color) })
+    if (aes.size) tooltipFields.push({ field: aes.size, type: inferFieldType(data, aes.size) })
+    encodingMods.tooltip = tooltipFields
+  }
+
+  return { params, encodingMods }
 }
 
 /**
@@ -282,7 +384,7 @@ export function plotSpecToVegaLite(
   spec: PlotSpec,
   options: ExportOptions = {}
 ): VegaLiteSpec {
-  const { width = 600, height = 400, publication = true } = options
+  const { width = 600, height = 400, publication = true, interactive = false } = options
 
   const vlSpec: VegaLiteSpec = {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
@@ -372,6 +474,34 @@ export function plotSpecToVegaLite(
         }
         if (spec.labels.y && layer.encoding.y) {
           (layer.encoding.y as Record<string, unknown>).title = spec.labels.y
+        }
+      }
+    }
+  }
+
+  // Apply interactivity
+  if (interactive) {
+    const { params, encodingMods } = buildInteractivity(
+      interactive,
+      spec.aes,
+      spec.data as Record<string, unknown>[]
+    )
+
+    if (params.length > 0) {
+      vlSpec.params = params
+    }
+
+    // Apply encoding modifications (tooltip, opacity, etc.)
+    if (Object.keys(encodingMods).length > 0) {
+      if (vlSpec.encoding) {
+        Object.assign(vlSpec.encoding, encodingMods)
+      }
+      // Also apply to layers
+      if (vlSpec.layer) {
+        for (const layer of vlSpec.layer) {
+          if (layer.encoding) {
+            Object.assign(layer.encoding, encodingMods)
+          }
         }
       }
     }

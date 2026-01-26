@@ -159,6 +159,54 @@ describe('Vega-Lite export', () => {
     })
   })
 
+  describe('interactivity', () => {
+    it('adds tooltip when interactive is true', () => {
+      const vl = plotSpecToVegaLite(simpleSpec, { interactive: true })
+      expect(vl.encoding?.tooltip).toBeDefined()
+      expect(Array.isArray(vl.encoding?.tooltip)).toBe(true)
+    })
+
+    it('adds hover param when interactive is true', () => {
+      const vl = plotSpecToVegaLite(simpleSpec, { interactive: true })
+      expect(vl.params).toBeDefined()
+      const hoverParam = vl.params?.find((p: any) => p.name === 'hover')
+      expect(hoverParam).toBeDefined()
+    })
+
+    it('adds legend filter when color aesthetic exists', () => {
+      const colorSpec: PlotSpec = {
+        ...simpleSpec,
+        aes: { ...simpleSpec.aes, color: 'cat' },
+      }
+      const vl = plotSpecToVegaLite(colorSpec, { interactive: true })
+      const legendParam = vl.params?.find((p: any) => p.name === 'legendFilter')
+      expect(legendParam).toBeDefined()
+      expect((legendParam as any).bind).toBe('legend')
+    })
+
+    it('adds zoom when explicitly enabled', () => {
+      const vl = plotSpecToVegaLite(simpleSpec, {
+        interactive: { tooltip: false, hover: false, zoom: true },
+      })
+      const gridParam = vl.params?.find((p: any) => p.name === 'grid')
+      expect(gridParam).toBeDefined()
+      expect((gridParam as any).bind).toBe('scales')
+    })
+
+    it('adds brush selection when enabled', () => {
+      const vl = plotSpecToVegaLite(simpleSpec, {
+        interactive: { tooltip: false, hover: false, brush: true },
+      })
+      const brushParam = vl.params?.find((p: any) => p.name === 'brush')
+      expect(brushParam).toBeDefined()
+    })
+
+    it('does not add params when interactive is false', () => {
+      const vl = plotSpecToVegaLite(simpleSpec, { interactive: false })
+      expect(vl.params).toBeUndefined()
+    })
+  })
+
   describe('field type inference', () => {
     it('infers quantitative for numbers', () => {
       const vl = plotSpecToVegaLite(simpleSpec)
