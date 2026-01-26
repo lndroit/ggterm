@@ -80,3 +80,15 @@ See `docs/PUBLISHING-PLAN.md` for roadmap.
 **After core is published**:
 - Publish remaining 7 packages
 - Add npm badges to README
+
+## Claude Code Skills
+
+Three skills are available in `.claude/skills/` for AI-assisted data analysis:
+
+| Skill | Purpose | Invoke |
+|-------|---------|--------|
+| `data-load` | Load CSV, JSON, JSONL data | Auto or `/data-load` |
+| `ggterm-plot` | Create terminal visualizations | Auto or `/ggterm-plot` |
+| `ggterm-markdown` | Generate reports with plots | Auto or `/ggterm-markdown` |
+
+Skills enable deterministic visualization workflows for AI agents. See `docs/PAPER-STRATEGY.md` for academic publication plans.

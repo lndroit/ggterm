@@ -110,6 +110,63 @@ ggterm is a TypeScript implementation of the Grammar of Graphics for terminal in
 3. **Community**: 50+ GitHub stars
 4. **Stability**: Zero critical bugs post-1.0
 
+## Phase 5: AI Agent Integration (Priority: High)
+
+### 5.1 Claude Code Skills
+
+ggterm can serve as the visualization layer for AI coding agents performing data analysis. Skills provide deterministic behavior.
+
+| Skill | Purpose | Status |
+|-------|---------|--------|
+| `data-load` | Universal data input (CSV, JSON, Parquet) | ✅ Complete |
+| `ggterm-plot` | Terminal visualization with Grammar of Graphics | ✅ Complete |
+| `ggterm-markdown` | Report generation with embedded plots | ✅ Complete |
+
+**Skill Location**: `.claude/skills/` (project-level) or distributed as plugin
+
+### 5.2 Key Integration Features
+
+- **PlotSpec JSON**: Already built-in via `.spec()` for reproducibility/tracking
+- **Declarative API**: Maps naturally to LLM code generation
+- **Auto-renderer selection**: Adapts to terminal capabilities without agent knowledge
+
+### 5.3 Distribution Strategy
+
+```
+@ggterm/core          → npm (the library)
+.claude/skills/       → Bundled in repo for users
+ggterm-claude-plugin  → Future: standalone plugin distribution
+```
+
+## Phase 6: Academic Publication (Priority: Medium)
+
+### 6.1 Target Venues
+
+| Venue | Format | Cost | Fit |
+|-------|--------|------|-----|
+| **JOSS** | ~1000 words + software review | Free | ⭐⭐⭐ Best for software |
+| **Bioinformatics App Notes** | 4 pages | ~$2,800 | ⭐⭐ If bio angle |
+| **SoftwareX** | 6 pages | $1,560 | ⭐⭐ Domain-independent |
+| **F1000Research** | Flexible | $1,350 | ⭐⭐ Fast publication |
+
+### 6.2 Paper Framing
+
+> **ggterm: A Grammar of Graphics Implementation Enabling Data Visualization in AI Coding Agents**
+
+Key contributions:
+1. First Grammar of Graphics for terminal environments
+2. Agent Skills for deterministic AI-assisted data analysis
+3. Built-in PlotSpec export for reproducibility
+
+### 6.3 Requirements Checklist
+
+- [ ] 6+ months public development history (JOSS requirement)
+- [ ] Comparison with existing tools (plotext, asciichart, termgraph)
+- [ ] Usage examples with AI agent workflows
+- [ ] PlotSpec JSON schema documentation
+
+See [PAPER-STRATEGY.md](./PAPER-STRATEGY.md) for detailed publication strategy.
+
 ## Timeline
 
-Phase 1 is the immediate focus before any npm publication. Phases 2-4 can proceed iteratively after the initial release.
+Phase 1 is the immediate focus before any npm publication. Phases 2-4 can proceed iteratively after the initial release. Phase 5 (AI Agent Integration) runs in parallel with npm publication. Phase 6 (Academic Publication) follows after npm is live and skills are complete.
