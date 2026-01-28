@@ -7,18 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "bun run --filter '@ggterm/core' build && bun run --filter '@ggterm/render-*' build && bun run --filter '!@ggterm/core' --filter '!@ggterm/render-*' build",
-    "test": "bun test packages/core && bun test packages/solid && bun test packages/svelte && bun test packages/vue",
-    "test:core": "bun test packages/core",
-    "test:solid": "bun test packages/solid",
-    "test:svelte": "bun test packages/svelte",
-    "test:vue": "bun test packages/vue",
-    "lint": "eslint packages/*/src/**/*.ts",
-    "lint:fix": "eslint packages/*/src/**/*.ts --fix",
-    "format": "prettier --write 'packages/*/src/**/*.ts'",
-    "format:check": "prettier --check 'packages/*/src/**/*.ts'",
+    "build": "bun run --filter '@ggterm/core' build",
+    "test": "bun test packages/core",
+    "lint": "eslint packages/core/src/**/*.ts",
+    "lint:fix": "eslint packages/core/src/**/*.ts --fix",
+    "format": "prettier --write 'packages/core/src/**/*.ts'",
+    "format:check": "prettier --check 'packages/core/src/**/*.ts'",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf packages/*/dist"
+    "clean": "rm -rf packages/core/dist"
   },
   "devDependencies": {
     "@types/bun": "^1.1.0",

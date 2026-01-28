@@ -6,7 +6,7 @@
 
 A Grammar of Graphics for Terminal User Interfaces.
 
-**ggterm** is a TypeScript library implementing Leland Wilkinson's Grammar of Graphics for terminal-based rendering. Designed to integrate with [OpenTUI](https://github.com/sst/opentui), it enables declarative, publication-aware data visualization directly in the terminal.
+**ggterm** is a TypeScript library implementing Leland Wilkinson's Grammar of Graphics for terminal-based rendering. Create publication-quality data visualizations directly in your terminal.
 
 ## Why ggterm?
 
@@ -20,7 +20,6 @@ ggterm provides:
 - Composable layers that build complex plots incrementally
 - Automatic handling of scales, legends, and axes
 - Familiar API for R/Python users (ggplot2, plotnine)
-- Native OpenTUI integration for reactive terminal UIs
 
 ## Quick Example
 
@@ -39,26 +38,6 @@ const plot = gg(data)
 
 // Render to string
 console.log(plot.render({ width: 80, height: 24 }))
-```
-
-## OpenTUI Integration
-
-```tsx
-import { GGTerm } from '@ggterm/opentui'
-
-function Dashboard({ data }) {
-  return (
-    <box flexDirection="row">
-      <GGTerm
-        data={data}
-        aes={{ x: 'time', y: 'value', color: 'series' }}
-        geoms={[geom_line()]}
-        width="50%"
-        height={20}
-      />
-    </box>
-  )
-}
 ```
 
 ## Interactive REPL
@@ -90,43 +69,32 @@ ggterm> gg(data).aes({x: "x", y: "y", color: "group"}).geom(geom_point())
 ## Features
 
 - **Interactive REPL**: Build plots interactively with `npx ggterm`
-- **CLI Tool**: Quick plotting from CSV/JSON files with `bun cli-plot.ts`
-- **Multiple Renderers**: Braille (high-res), Block (compatible), Sixel/Kitty (pixel-perfect)
+- **CLI Tool**: Quick plotting from CSV/JSON/JSONL files
 - **30+ Geometries**: Points, lines, bars, histograms, boxplots, Q-Q plots, density, contours, and more
 - **Grammar Layers**: Data, Aesthetics, Geometries, Statistics, Scales, Coordinates, Facets, Themes
 - **Faceting**: Small multiples with `facet_wrap()` and `facet_grid()`
+- **Reference Lines**: Add hline, vline, abline with `+hline@50` syntax
 - **Export to HTML**: Interactive Vega-Lite exports with PNG/SVG download
 - **Plot History**: Automatic provenance tracking with search and retrieval
-- **Streaming Data**: Real-time updates with `plot.push(newData)`
 - **Terminal Detection**: Automatic color capability detection and graceful degradation
-- **Framework Support**: React, Solid.js, Svelte, Vue 3 components and composables
-
-## Packages
-
-| Package | Description |
-|---------|-------------|
-| `@ggterm/core` | Grammar engine, scales, statistics |
-| `@ggterm/solid` | Solid.js components and primitives |
-| `@ggterm/svelte` | Svelte components and stores |
-| `@ggterm/vue` | Vue 3 components and composables |
-| `@ggterm/render-braille` | Braille dot matrix renderer (2x4 per cell) |
-| `@ggterm/render-block` | Block character renderer (universal compatibility) |
-| `@ggterm/render-sixel` | Sixel/Kitty graphics protocol renderer |
-| `@ggterm/opentui` | OpenTUI/React integration components |
 
 ## Installation
 
 ```bash
-bun add @ggterm/core @ggterm/opentui
+npm install @ggterm/core
 ```
 
 ## CLI Quick Start
 
-Plot directly from CSV files without writing code:
+Plot directly from CSV, JSON, or JSONL files:
 
 ```bash
 # Basic scatter plot
 bun packages/core/src/cli-plot.ts data.csv x y
+
+# JSON and JSONL support
+bun packages/core/src/cli-plot.ts data.json x y
+bun packages/core/src/cli-plot.ts data.jsonl x y color
 
 # With color mapping and title
 bun packages/core/src/cli-plot.ts data.csv x y category "My Plot"
@@ -135,11 +103,17 @@ bun packages/core/src/cli-plot.ts data.csv x y category "My Plot"
 bun packages/core/src/cli-plot.ts data.csv x y - "Title" histogram
 bun packages/core/src/cli-plot.ts data.csv x y - "Title" boxplot
 
+# Reference lines
+bun packages/core/src/cli-plot.ts data.csv x y - - point+hline@50
+bun packages/core/src/cli-plot.ts data.csv x y - - line+vline@2.5+hline@100
+
 # Faceted plot (small multiples)
 bun packages/core/src/cli-plot.ts data.csv x y color "Title" point facet_var
 ```
 
 **29 CLI-exposed geoms**: point, line, path, step, bar, col, histogram, freqpoly, boxplot, violin, area, ribbon, rug, errorbar, errorbarh, crossbar, linerange, pointrange, smooth, segment, rect, raster, tile, text, label, contour, contour_filled, density_2d, qq
+
+**Reference lines**: `+hline@<y>`, `+vline@<x>`, `+abline@<slope>,<intercept>`
 
 ## Export to HTML
 
@@ -196,7 +170,6 @@ bun packages/core/src/cli-plot.ts export 2024-01-26-001 output.html
 
 - [ggplot2](https://ggplot2.tidyverse.org/) (R) - The original grammar of graphics
 - [Vega-Lite](https://vega.github.io/vega-lite/) - JSON grammar for web
-- [OpenTUI](https://github.com/sst/opentui) - Terminal UI framework
 - [plotext](https://github.com/piccolomo/plotext) (Python) - Terminal plotting
 
 ## License
