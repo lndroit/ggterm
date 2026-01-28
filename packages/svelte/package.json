@@ -1,6 +1,6 @@
 {
   "name": "@ggterm/svelte",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Svelte components for ggterm - Grammar of Graphics for terminals",
   "type": "module",
   "main": "./dist/index.js",
