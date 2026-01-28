@@ -28,11 +28,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/handleylab/ggterm.git"
+    "url": "https://github.com/shandley/ggterm.git"
   },
-  "homepage": "https://github.com/handleylab/ggterm#readme",
+  "homepage": "https://github.com/shandley/ggterm#readme",
   "bugs": {
-    "url": "https://github.com/handleylab/ggterm/issues"
+    "url": "https://github.com/shandley/ggterm/issues"
   },
   "keywords": [
     "grammar-of-graphics",
