@@ -1,0 +1,42 @@
+Figure 1: ggterm Architecture
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│    INPUT                     GRAMMAR LAYERS                      OUTPUT     │
+│                                                                             │
+│  ┌─────────┐      ┌─────────────────────────────────────┐    ┌──────────┐  │
+│  │  Data   │      │                                     │    │ Terminal │  │
+│  │  ────   │      │   ┌─────┐   ┌──────┐   ┌───────┐   │    │  Output  │  │
+│  │  CSV    │─────▶│   │ Aes │──▶│ Geom │──▶│ Scale │   │───▶│  ──────  │  │
+│  │  JSON   │      │   └─────┘   └──────┘   └───────┘   │    │  Unicode │  │
+│  │  JSONL  │      │       │         │          │       │    │  + ANSI  │  │
+│  └─────────┘      │       ▼         ▼          ▼       │    └──────────┘  │
+│                   │   ┌─────────────────────────────┐  │          │       │
+│                   │   │      Plot Specification     │  │          │       │
+│                   │   │           (JSON)            │  │          ▼       │
+│                   │   └─────────────────────────────┘  │    ┌──────────┐  │
+│                   │       │         │          │       │    │   HTML   │  │
+│                   │       ▼         ▼          ▼       │    │  Export  │  │
+│                   │   ┌───────┐ ┌───────┐ ┌────────┐  │    │  ──────  │  │
+│                   │   │ Facet │ │ Coord │ │ Theme  │  │    │ Vega-Lite│  │
+│                   │   └───────┘ └───────┘ └────────┘  │    │ PNG/SVG  │  │
+│                   │                                     │    └──────────┘  │
+│                   └─────────────────────────────────────┘          │       │
+│                                                                    │       │
+│                                    │                               ▼       │
+│                                    ▼                         ┌──────────┐  │
+│                            ┌─────────────┐                   │  History │  │
+│                            │   Render    │                   │  ──────  │  │
+│                            │   Pipeline  │                   │ Provenance│ │
+│                            └─────────────┘                   │ Retrieval │ │
+│                                                              └──────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Components:
+  • Aes: Maps data variables to visual properties (x, y, color, size, shape)
+  • Geom: Specifies geometry type (point, line, bar, histogram, boxplot, etc.)
+  • Scale: Transforms data values to visual values (continuous, discrete, color)
+  • Facet: Creates small multiples by splitting data on categorical variables
+  • Coord: Defines coordinate system (cartesian, polar)
+  • Theme: Controls non-data visual elements (fonts, grid, background)

@@ -1,0 +1,47 @@
+Figure 2: Feature Comparison of Terminal Visualization Libraries
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  Feature                    ggterm    plotext   termgraph   asciichart      │
+│  ─────────────────────────────────────────────────────────────────────────   │
+│                                                                              │
+│  GRAMMAR OF GRAPHICS                                                         │
+│    Declarative API            ✓         -          -           -            │
+│    Composable layers          ✓         -          -           -            │
+│    Aesthetic mappings         ✓         -          -           -            │
+│                                                                              │
+│  GEOMETRY TYPES                                                              │
+│    Scatter/Point              ✓         ✓          -           -            │
+│    Line                       ✓         ✓          -           ✓            │
+│    Bar/Histogram              ✓         ✓          ✓           -            │
+│    Boxplot                    ✓         ✓          -           -            │
+│    Density/Contour            ✓         -          -           -            │
+│    Statistical (smooth, qq)   ✓         -          -           -            │
+│    Total geometry types       30        15         3           1            │
+│                                                                              │
+│  DATA HANDLING                                                               │
+│    Color encoding             ✓         ✓          -           -            │
+│    Size encoding              ✓         -          -           -            │
+│    Shape encoding             ✓         -          -           -            │
+│    Faceting                   ✓         -          -           -            │
+│    Automatic statistics       ✓         Limited    -           -            │
+│                                                                              │
+│  OUTPUT & EXPORT                                                             │
+│    Terminal rendering         ✓         ✓          ✓           ✓            │
+│    HTML/SVG export            ✓         ✓          -           -            │
+│    Vega-Lite integration      ✓         -          -           -            │
+│    Plot history               ✓         -          -           -            │
+│    Provenance tracking        ✓         -          -           -            │
+│                                                                              │
+│  AI INTEGRATION                                                              │
+│    Agent skills/tools         ✓         -          -           -            │
+│    Natural language workflow  ✓         -          -           -            │
+│    Bundled datasets           ✓         -          -           -            │
+│                                                                              │
+│  IMPLEMENTATION                                                              │
+│    Language                   TypeScript Python    Python      JavaScript   │
+│    License                    MIT       MIT        MIT         BSD-3        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Legend: ✓ = Supported, - = Not supported, Limited = Partial support

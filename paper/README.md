@@ -21,12 +21,18 @@ Academic preprint for bioRxiv submission.
 - [ ] Review and finalize references
 - [ ] Convert to PDF (bioRxiv accepts PDF, Word, or LaTeX)
 
-### Figures to Create
+### Figures (Created)
 
-1. **Architecture diagram** - Data → Grammar Layers → Renderer → Output
-2. **Feature comparison table** - ggterm vs plotext vs termgraph vs asciichart
-3. **Iris analysis example** - 4-panel showing progression
-4. **Conversational workflow** - User/AI interaction diagram
+All figures are in `figures/` directory as ASCII art (can be converted to proper graphics):
+
+1. **figure1-architecture.txt** - Data → Grammar Layers → Renderer → Output
+2. **figure2-comparison.txt** - Feature matrix vs plotext, termgraph, asciichart
+3. **figure3-iris-analysis.txt** - 4-panel showing A) scatter, B) colored, C) faceted, D) export
+4. **figure4-workflow.txt** - Conversational analysis with AI agent
+
+To convert to publication graphics, recreate in:
+- Lucidchart, draw.io, or Figma (diagrams)
+- Actual ggterm screenshots (Figure 3)
 
 ### bioRxiv Submission
 

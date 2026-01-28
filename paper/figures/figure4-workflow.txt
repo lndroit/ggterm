@@ -1,0 +1,76 @@
+Figure 4: Conversational Data Analysis Workflow with AI Agent Integration
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  USER                           AI AGENT                         ggterm    │
+│                                                                             │
+│  ┌─────────────────────┐                                                    │
+│  │ "Load the iris      │                                                    │
+│  │  dataset"           │───────────────▶ Invokes data-load skill           │
+│  └─────────────────────┘                         │                          │
+│                                                  ▼                          │
+│                                         ┌───────────────┐                   │
+│                                         │  .data iris   │                   │
+│                                         │  150 rows     │                   │
+│                                         └───────────────┘                   │
+│                                                                             │
+│  ┌─────────────────────┐                                                    │
+│  │ "Show petal length  │                                                    │
+│  │  vs width"          │───────────────▶ Generates ggterm code             │
+│  └─────────────────────┘                         │                          │
+│                                                  ▼                          │
+│                         ┌────────────────────────────────────────┐          │
+│                         │ gg(data)                               │          │
+│                         │   .aes({x:'petal_length',              │          │
+│                         │         y:'petal_width'})              │          │
+│                         │   .geom(geom_point())                  │          │
+│                         └────────────────────────────────────────┘          │
+│                                                  │                          │
+│                                                  ▼                          │
+│                                        ┌─────────────────┐                  │
+│            Terminal Plot ◀─────────────│    Render &     │                  │
+│                 │                       │  Store History  │                  │
+│                 ▼                       └─────────────────┘                  │
+│         ┌──────────────┐                                                    │
+│         │   2 ┤    ●●● │                                                    │
+│         │     │  ●●●●● │                                                    │
+│         │   1 ┤●●●●●   │                                                    │
+│         │     └─────── │                                                    │
+│         └──────────────┘                                                    │
+│                                                                             │
+│  ┌─────────────────────┐                                                    │
+│  │ "Color by species"  │───────────────▶ Modifies specification            │
+│  └─────────────────────┘                         │                          │
+│                                                  ▼                          │
+│                         ┌────────────────────────────────────────┐          │
+│                         │   .aes({..., color: 'species'})        │          │
+│                         └────────────────────────────────────────┘          │
+│                                                  │                          │
+│                                                  ▼                          │
+│         ┌──────────────┐               ┌─────────────────┐                  │
+│         │   2 ┤    ■■■ │◀──────────────│    Re-render    │                  │
+│         │     │  ▲▲▲▲▲ │               └─────────────────┘                  │
+│         │   1 ┤●●●●●   │                                                    │
+│         │     └─────── │  ● setosa  ▲ versicolor  ■ virginica              │
+│         └──────────────┘                                                    │
+│                                                                             │
+│  ┌─────────────────────┐                                                    │
+│  │ "Export for my      │───────────────▶ Invokes ggterm-publish skill      │
+│  │  paper"             │                         │                          │
+│  └─────────────────────┘                         ▼                          │
+│                                        ┌─────────────────┐                  │
+│                                        │  Generate HTML  │                  │
+│                                        │  with Vega-Lite │                  │
+│            iris-plot.html ◀────────────│  + PNG/SVG      │                  │
+│                                        └─────────────────┘                  │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  KEY FEATURES:                                                              │
+│                                                                             │
+│  • Natural language → Declarative code: No syntax memorization required    │
+│  • Incremental refinement: Each request layers onto previous specification │
+│  • Automatic history: All plots stored with provenance for retrieval       │
+│  • Publication export: One command generates journal-ready figures          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
