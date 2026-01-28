@@ -52,3 +52,7 @@ tmp/
 temp/
 *.tmp
 .ggterm/
+
+# Test output files
+*.html
+html/

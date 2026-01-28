@@ -74,6 +74,7 @@ const emit = defineEmits<{
   render: [rendered: string]
   hover: [payload: { index: number; record: DataSource[number] | null }]
   click: [payload: { index: number; record: DataSource[number] }]
+  keydown: [event: KeyboardEvent]
 }>()
 
 // Rendered output

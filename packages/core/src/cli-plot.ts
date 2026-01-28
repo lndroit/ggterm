@@ -129,7 +129,7 @@ function loadCSV(dataFile: string): { headers: string[]; data: Record<string, an
     process.exit(1)
   }
 
-  const data = lines.slice(1).map((line, lineNum) => {
+  const data = lines.slice(1).map((line) => {
     const values = line.split(',')
     const row: Record<string, any> = {}
     headers.forEach((h, i) => {
