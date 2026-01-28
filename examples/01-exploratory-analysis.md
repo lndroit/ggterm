@@ -1,10 +1,18 @@
 # Exploratory Data Analysis
 
-This vignette demonstrates how to explore an unfamiliar dataset through natural language conversation with an AI assistant.
+This vignette demonstrates exploring the **mtcars** dataset through natural language conversation.
 
-## Scenario
+## Dataset: mtcars
 
-You have a CSV file with housing data and want to understand its structure and patterns.
+The mtcars dataset contains performance data for 16 cars from Motor Trend magazine:
+
+| Column | Description |
+|--------|-------------|
+| name | Car model name |
+| mpg | Miles per gallon |
+| cyl | Number of cylinders (4, 6, or 8) |
+| hp | Horsepower |
+| wt | Weight (1000 lbs) |
 
 ---
 
@@ -12,173 +20,188 @@ You have a CSV file with housing data and want to understand its structure and p
 
 ### Understanding the Data
 
-**You:** I have a file called `housing.csv`. What's in it?
+**You:** Load the mtcars dataset. What's in it?
 
-**AI:** *Inspects the file and reports:*
+**AI:** *Loads and inspects the data:*
 ```
-housing.csv: 500 rows × 8 columns
+mtcars: 16 rows × 5 columns
 
-Column        Type          Unique  Range/Stats         Sample Values
-──────────────────────────────────────────────────────────────────────
-price         numeric          487  150000 – 850000     245000, 312000
-sqft          numeric          312  800 – 4500          1200, 2100, 1850
-bedrooms      numeric            5  1 – 5               3, 2, 4
-bathrooms     numeric            4  1 – 4               2, 1, 3
-year_built    numeric           85  1920 – 2023         1985, 2001, 1962
-neighborhood  categorical       12  12 categories       Downtown, Suburbs
-condition     categorical        4  4 categories        Good, Fair, Excellent
-sold_date     date            365  date range          2023-01-15, 2023-03-22
+Column   Type       Range           Sample Values
+──────────────────────────────────────────────────────────
+name     string     16 unique       Mazda RX4, Datsun 710
+mpg      numeric    10.4 – 24.4     21, 22.8, 18.7
+cyl      numeric    4, 6, 8         6, 4, 8
+hp       numeric    62 – 245        110, 93, 175
+wt       numeric    2.32 – 5.42     2.62, 2.32, 3.44
 ```
 
 ---
 
 ### Initial Visualization
 
-**You:** Show me the relationship between price and square footage.
+**You:** Show me the relationship between weight and fuel efficiency.
 
 **AI:** *Creates scatter plot:*
 ```
-                         Price vs Square Footage
-  850K ┤                                              ●
-       │                                    ●    ●  ●
-  700K ┤                              ●  ●    ●●
-       │                        ●  ●●  ●● ●●
-  550K ┤                    ●●●●●●●●●●
-       │              ●●●●●●●●●●●
-  400K ┤        ●●●●●●●●●●●
-       │    ●●●●●●●●
-  250K ┤●●●●●●
-       │●●
-  150K ┤●
-       └────────────────────────────────────────────────
-        800    1500    2200    2900    3600    4300
-                        Square Feet
-```
+                    Weight vs Fuel Efficiency
+  mpg
+   25 ┤●                ●
+      │  ●           ●
+   22 ┤     ●     ●
+      │        ●
+   19 ┤           ●  ●
+      │              ●  ●
+   16 ┤                 ●  ●
+      │                    ●
+   13 ┤                       ●
+      │                          ●  ●
+   10 ┤
+      └────────────────────────────────────────
+       2.5     3.0     3.5     4.0     4.5     5.0
+                      Weight (1000 lbs)
 
-There's a clear positive correlation - larger homes tend to cost more.
-
----
-
-### Drilling Down
-
-**You:** Does this vary by neighborhood?
-
-**AI:** *Adds color mapping:*
-```
-                    Price vs Sqft by Neighborhood
-  850K ┤                                           ●  ● Downtown
-       │                                    ▲  ●  ●    ▲ Suburbs
-  700K ┤                              ●  ▲    ●▲       ■ Midtown
-       │                        ▲  ●●  ▲● ●●
-  550K ┤                    ●▲●●■●●●●●
-       │              ▲●■●●●■●●●●
-  400K ┤        ●▲■●●●●●●●●
-       │    ■▲●●●●■●
-  250K ┤▲■●●●●
-       │■▲
-       └────────────────────────────────────────────────
-        800    1500    2200    2900    3600    4300
-```
-
-Downtown properties (●) cluster at higher prices for the same square footage. Suburbs (▲) offer more space for less money.
-
----
-
-### Distribution Analysis
-
-**You:** What about the price distribution? Any outliers?
-
-**AI:** *Creates histogram:*
-```
-                        Price Distribution
-  count
-    80 ┤    ████
-       │   ██████
-    60 ┤  ████████
-       │ ██████████
-    40 ┤████████████
-       │██████████████
-    20 ┤████████████████                          █
-       │██████████████████                    █  ███
-     0 ┤████████████████████████████████████████████
-       └────────────────────────────────────────────
-        150K   300K   450K   600K   750K   850K
-                          Price
-
-Right-skewed distribution with a few high-end properties above $750K.
-```
-
----
-
-### Comparisons
-
-**You:** Compare price distributions across condition ratings.
-
-**AI:** *Creates grouped visualization:*
-```
-                    Price by Condition
-         Poor      Fair      Good    Excellent
-  800K ┤                              ──┬──
-       │                       ──┬──   │
-  600K ┤              ──┬──    ┌─┼─┐  ┌┼┐
-       │   ──┬──     ┌─┼─┐    │ │ │  │││
-  400K ┤  ┌─┼─┐     │ │ │    └─┼─┘  └┼┘
-       │  │ │ │     └─┼─┘      │     │
-  200K ┤  └─┼─┘       │      ──┴──  ──┴──
-       │    │       ──┴──
-       └────────────────────────────────────────
-
-Excellent condition homes have higher median prices and less variance.
+Clear negative correlation - heavier cars get worse mileage.
 ```
 
 ---
 
 ### Adding Context
 
-**You:** Add a reference line at the median price.
+**You:** Color by number of cylinders.
 
-**AI:** *Adds horizontal reference line:*
+**AI:** *Adds color encoding:*
 ```
-                         Price vs Square Footage
-  850K ┤                                              ●
-       │                                    ●    ●  ●
-  700K ┤                              ●  ●    ●●
-       │                        ●  ●●  ●● ●●
-  550K ┤                    ●●●●●●●●●●
-       │              ●●●●●●●●●●●
-  400K ┤────────●●●●●●●●●●────────────────── median: $385K
-       │    ●●●●●●●●
-  250K ┤●●●●●●
-       │●●
-  150K ┤●
-       └────────────────────────────────────────────────
-        800    1500    2200    2900    3600    4300
+                Weight vs MPG by Cylinders
+  mpg
+   25 ┤▲                ▲              ▲ 4-cyl
+      │  ▲           ▲                 ● 6-cyl
+   22 ┤     ▲     ▲                    ■ 8-cyl
+      │        ●
+   19 ┤           ●  ●
+      │              ●  ●
+   16 ┤                 ■  ■
+      │                    ■
+   13 ┤                       ■
+      │                          ■  ■
+   10 ┤
+      └────────────────────────────────────────
+       2.5     3.0     3.5     4.0     4.5     5.0
+                      Weight (1000 lbs)
+
+4-cylinder cars (▲) cluster at low weight/high MPG.
+8-cylinder cars (■) cluster at high weight/low MPG.
 ```
 
 ---
 
-### Export for Sharing
+### Distribution Analysis
 
-**You:** Export that last plot so I can share it.
+**You:** What's the distribution of horsepower?
+
+**AI:** *Creates histogram:*
+```
+                    Horsepower Distribution
+  count
+    5 ┤    ████
+      │    ████
+    4 ┤    ████  ████
+      │    ████  ████
+    3 ┤    ████  ████  ████
+      │    ████  ████  ████
+    2 ┤    ████  ████  ████  ████
+      │    ████  ████  ████  ████        ████
+    1 ┤    ████  ████  ████  ████  ████  ████
+      │    ████  ████  ████  ████  ████  ████
+    0 ┤────████──████──████──████──████──████────
+           60    100   140   180   220   260
+                     Horsepower
+
+Range: 62 - 245 HP
+Median: 123 HP
+Most cars in the 90-180 HP range.
+```
+
+---
+
+### Grouped Comparison
+
+**You:** Compare horsepower across cylinder counts.
+
+**AI:** *Creates box plots:*
+```
+              Horsepower by Cylinder Count
+
+  HP
+  250 ┤                              ──┬──
+      │                             ┌──┼──┐
+  200 ┤                             │  │  │
+      │              ──┬──          │  │  │
+  150 ┤             ┌──┼──┐         └──┼──┘
+      │             │  │  │            │
+  100 ┤  ──┬──      └──┼──┘         ──┴──
+      │ ┌──┼──┐        │
+   75 ┤ │  │  │     ──┴──
+      │ └──┼──┘
+   50 ┤  ──┴──
+      └────────────────────────────────────
+          4-cyl       6-cyl       8-cyl
+
+8-cylinder engines have highest HP (median ~180).
+4-cylinder engines most efficient (median ~90 HP).
+```
+
+---
+
+### Efficiency Analysis
+
+**You:** Which cars have the best efficiency for their weight class?
+
+**AI:** *Adds reference line and labels:*
+```
+                Weight vs MPG (with trend)
+  mpg
+   25 ┤Datsun 710●     ●Merc 230
+      │  ●Merc 240D ●
+   22 ┤     ●     ●
+      │ ───────────────────────────────── trend
+   19 ┤           ●  ●
+      │              ●  ●
+   16 ┤                 ●  ●
+      │                    ●Merc 450SL
+   13 ┤                       ●
+      │                          ●  ●
+   10 ┤                          Cadillac●
+      └────────────────────────────────────────
+       2.5     3.0     3.5     4.0     4.5     5.0
+
+Above trend line = better than average efficiency.
+Datsun 710 and Merc 240D are efficiency leaders.
+```
+
+---
+
+### Export
+
+**You:** Export for my report.
 
 **AI:** *Creates interactive HTML:*
 ```
-Created housing-analysis.html
+Created mtcars-analysis.html
 
 Open in browser to:
-- Pan and zoom
+- Pan and zoom the visualization
 - Download as PNG or SVG
-- View underlying data on hover
+- Hover for car details
 ```
 
 ---
 
-## Key Patterns
+## Key Insights
 
 This exploratory session revealed:
-1. Strong price-sqft correlation
-2. Neighborhood premium (Downtown +15%)
-3. Right-skewed price distribution
-4. Condition significantly impacts value
+1. Strong weight-MPG inverse correlation
+2. Clear clustering by cylinder count
+3. 4-cylinder cars dominate efficiency
+4. Datsun 710 and Merc 240D are efficiency outliers
 
-All discovered through conversation, not memorizing commands.
+All discovered through conversation, not code.

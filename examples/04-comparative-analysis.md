@@ -1,10 +1,18 @@
 # Comparative Analysis
 
-This vignette demonstrates comparing distributions and groups through natural language conversation.
+This vignette demonstrates comparing distributions across groups using the **iris** dataset.
 
-## Scenario
+## Dataset: iris
 
-You're analyzing A/B test results for a new checkout flow and need to compare conversion rates, time-on-page, and revenue across test variants.
+Fisher's iris dataset with measurements for 150 flowers across 3 species:
+
+| Column | Description |
+|--------|-------------|
+| sepal_length | Sepal length in cm |
+| sepal_width | Sepal width in cm |
+| petal_length | Petal length in cm |
+| petal_width | Petal width in cm |
+| species | setosa, versicolor, or virginica |
 
 ---
 
@@ -12,205 +20,219 @@ You're analyzing A/B test results for a new checkout flow and need to compare co
 
 ### Initial Comparison
 
-**You:** I have `ab_test_results.csv` with columns: variant (A or B), converted (boolean), time_seconds, and revenue. Compare the conversion rates.
+**You:** Load the iris dataset. Compare sepal length across the three species.
 
-**AI:** *Creates grouped bar chart:*
+**AI:** *Creates grouped bar chart of means:*
 ```
-                    Conversion Rate by Variant
+                Mean Sepal Length by Species
 
-  Conversion
-  Rate (%)
-     25 ┤                              ████
+  Sepal Length
+  (cm)
+    7.0 ┤                              ████
         │                              ████
-     20 ┤      ████                    ████
-        │      ████                    ████
-     15 ┤      ████                    ████
-        │      ████                    ████
-     10 ┤      ████                    ████
-        │      ████                    ████
-      5 ┤      ████                    ████
-        │      ████                    ████
-      0 ┤──────████────────────────────████──────
-               A                        B
-             (n=1,247)               (n=1,253)
+    6.5 ┤              ████            ████
+        │              ████            ████
+    6.0 ┤              ████            ████
+        │              ████            ████
+    5.5 ┤              ████            ████
+        │    ████      ████            ████
+    5.0 ┤    ████      ████            ████
+        │    ████      ████            ████
+    4.5 ┤────████──────████────────────████──────
+           setosa    versicolor    virginica
+          (n=50)      (n=50)        (n=50)
 
-Variant A: 18.2% conversion
-Variant B: 24.1% conversion
-Difference: +5.9 percentage points
+Mean sepal length increases: setosa (5.0) → versicolor (5.9) → virginica (6.6)
 ```
 
 ---
 
 ### Distribution Comparison
 
-**You:** Show me the distribution of time on page for each variant.
+**You:** Show me the full distribution, not just the means.
 
-**AI:** *Creates side-by-side histograms:*
+**AI:** *Creates box plots:*
 ```
-              Time on Page Distribution by Variant
+              Sepal Length Distribution by Species
 
-     Variant A                      Variant B
-  count                          count
-   120 ┤ ████                      120 ┤    ████
-       │██████                         │  ████████
-    80 ┤████████                    80 ┤████████████
-       │██████████                     │██████████████
-    40 ┤████████████                40 ┤████████████████
-       │██████████████                 │██████████████████
-     0 ┤████████████████████        0 ┤████████████████████████
-       └──────────────────────        └──────────────────────────
-        0   30   60   90  120          0   30   60   90  120
-              seconds                        seconds
+  Sepal
+  Length (cm)
+    8.0 ┤                              ──┬──
+        │                             ┌──┼──┐
+    7.5 ┤              ──┬──          │  │  │
+        │             ┌──┼──┐         │  │  │
+    7.0 ┤             │  │  │         └──┼──┘
+        │             │  │  │            │
+    6.5 ┤             └──┼──┘         ──┴──
+        │   ──┬──        │
+    6.0 ┤  ┌──┼──┐     ──┴──
+        │  │  │  │
+    5.5 ┤  │  │  │
+        │  └──┼──┘
+    5.0 ┤     │
+        │   ──┴──
+    4.5 ┤
+        └────────────────────────────────────────
+            setosa    versicolor    virginica
 
-A: median 45s, mean 52s        B: median 62s, mean 68s
-Variant B users spend more time (+16s median)
+              median    IQR       range
+setosa:        5.0    4.8-5.2    4.3-5.8
+versicolor:    5.9    5.6-6.3    4.9-7.0
+virginica:     6.5    6.2-6.9    4.9-7.9
 ```
 
 ---
 
 ### Overlaid Comparison
 
-**You:** Overlay those distributions on a single chart so I can compare directly.
+**You:** Overlay the distributions so I can compare directly.
 
 **AI:** *Creates overlaid density plot:*
 ```
-                   Time on Page: A vs B (Overlaid)
+             Sepal Length Distributions Overlaid
 
   density
-    0.03 ┤           ▲▲▲
-         │         ▲▲  ▲▲▲          ●●●●
-    0.02 ┤       ▲▲      ▲▲▲     ●●●    ●●●
-         │     ▲▲          ▲▲  ●●         ●●●
-    0.01 ┤   ▲▲             ▲▲●             ●●●
-         │ ▲▲               ●●▲▲              ●●●
-    0.00 ┤▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲●●●●●●▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲●●●●●●
-         └────────────────────────────────────────────
-          0       30       60       90      120
-                        seconds
+    0.8 ┤    ▲▲▲
+        │   ▲▲ ▲▲
+    0.6 ┤  ▲▲   ▲▲           ●●●
+        │ ▲▲     ▲▲        ●●  ●●
+    0.4 ┤▲▲       ▲▲      ●●    ●●      ■■■
+        │          ▲▲   ●●      ●●    ■■  ■■
+    0.2 ┤           ▲▲●●●        ●●  ■■    ■■
+        │            ●●▲▲         ●●■■      ■■
+    0.0 ┤▲▲▲▲▲▲▲▲▲▲●●●●▲▲▲▲▲▲▲▲▲▲▲●●■■■■▲▲▲▲■■■■■■
+        └────────────────────────────────────────────
+         4.0    5.0    6.0    7.0    8.0
 
-         ▲ Variant A (n=1,247)    ● Variant B (n=1,253)
+         ▲ setosa    ● versicolor    ■ virginica
 
-Clear shift rightward - Variant B keeps users engaged longer.
+Clear separation between species with some overlap.
+Setosa is tightly clustered, virginica has widest spread.
 ```
 
 ---
 
-### Box Plot Comparison
+### All Measurements
 
-**You:** Show me box plots of revenue by variant, but only for users who converted.
-
-**AI:** *Creates comparative box plots:*
-```
-              Revenue Distribution (Converted Users Only)
-
-  Revenue
-  ($)
-    200 ┤                    ──┬──
-        │       ──┬──       ┌──┼──┐
-    150 ┤      ┌─┼─┐       │  │  │
-        │      │ │ │       │  │  │
-    100 ┤      │ │ │       └──┼──┘
-        │      └─┼─┘          │
-     50 ┤        │          ──┴──
-        │      ──┴──
-      0 ┤──────────────────────────────────
-               A                B
-            (n=227)          (n=302)
-
-           A           B          Diff
-Median:   $78        $112        +$34
-Mean:     $85        $118        +$33
-IQR:      $45-$110   $72-$148
-
-Variant B converters spend 43% more on average.
-```
-
----
-
-### Statistical Significance
-
-**You:** Is that revenue difference statistically significant?
-
-**AI:** *Adds statistical annotation:*
-```
-              Revenue Distribution (Converted Users Only)
-
-  Revenue
-  ($)
-    200 ┤                    ──┬──
-        │       ──┬──       ┌──┼──┐
-    150 ┤      ┌─┼─┐       │  │  │     *** p < 0.001
-        │      │ │ │       │  │  │
-    100 ┤      │ │ │       └──┼──┘     95% CI for diff:
-        │      └─┼─┘          │        [$26, $42]
-     50 ┤        │          ──┴──
-        │      ──┴──
-      0 ┤──────────────────────────────────
-               A                B
-
-t-test: t(527) = 6.82, p < 0.001
-Effect size: Cohen's d = 0.59 (medium)
-The difference is statistically significant and meaningful.
-```
-
----
-
-### Multi-Metric Summary
-
-**You:** Create a summary comparing all three metrics: conversion, time, and revenue.
+**You:** Compare all four measurements across species side by side.
 
 **AI:** *Creates multi-panel comparison:*
 ```
-                    A/B Test Summary: Variant A vs B
+┌────── Sepal Length ───────┐  ┌────── Sepal Width ────────┐
+│      set  ver  vir        │  │      set  ver  vir        │
+│  8 ┤          ┬           │  │4.5┤  ┬                    │
+│  7 ┤      ┬  ┌┼┐          │  │4.0┤ ┌┼┐                   │
+│  6 ┤  ┬  ┌┼┐└┼┘           │  │3.5┤ │├┤      ┬    ┬       │
+│  5 ┤ ┌┼┐└┼┘  ┴            │  │3.0┤ └┼┘  ┬  ┌┼┐  ┌┼┐      │
+│  4 ┤ └┼┘  ┴               │  │2.5┤  ┴  ┌┼┐└┼┘  └┼┘       │
+│    └──────────────        │  │2.0┤     └┼┘  ┴    ┴       │
+└───────────────────────────┘  └───────────────────────────┘
 
-┌──────────── Conversion Rate ────────────┐
-│     A: ████████████████████ 18.2%       │
-│     B: ██████████████████████████ 24.1% │  +32% ✓
-└─────────────────────────────────────────┘
+┌────── Petal Length ───────┐  ┌────── Petal Width ────────┐
+│      set  ver  vir        │  │      set  ver  vir        │
+│  7 ┤              ┬       │  │2.5┤              ┬        │
+│  6 ┤          ┬  ┌┼┐      │  │2.0┤          ┬  ┌┼┐       │
+│  5 ┤      ┬  ┌┼┐└┼┘       │  │1.5┤      ┬  ┌┼┐└┼┘        │
+│  4 ┤     ┌┼┐└┼┘  ┴        │  │1.0┤     ┌┼┐└┼┘  ┴         │
+│  3 ┤     └┼┘  ┴           │  │0.5┤ ┬   └┼┘  ┴            │
+│  2 ┤  ┬   ┴               │  │   ┤┌┼┐   ┴                │
+│  1 ┤ ┌┼┐                  │  │0.0┤└┼┘                    │
+│    └──────────────        │  │   └──────────────         │
+└───────────────────────────┘  └───────────────────────────┘
 
-┌──────────── Time on Page ───────────────┐
-│     A: ████████████████████ 45s median  │
-│     B: ██████████████████████████ 62s   │  +38% ✓
-└─────────────────────────────────────────┘
-
-┌──────────── Revenue (converters) ───────┐
-│     A: ████████████████████ $78 median  │
-│     B: ██████████████████████████ $112  │  +44% ✓
-└─────────────────────────────────────────┘
-
-RECOMMENDATION: Variant B outperforms A on all metrics.
-Statistical significance: All comparisons p < 0.01
+Petal measurements show strongest species separation.
+Sepal width is the least discriminating feature.
 ```
 
 ---
 
-### Export for Stakeholders
+### Statistical Summary
 
-**You:** Export this summary for the product review meeting.
+**You:** Add statistical significance - which differences are meaningful?
 
-**AI:** *Creates presentation-ready export:*
+**AI:** *Adds statistical annotations:*
 ```
-Created ab-test-summary.html
+              Petal Length by Species (Most Discriminating)
+
+  Petal
+  Length (cm)
+    7.0 ┤                              ──┬──
+        │                             ┌──┼──┐   ***
+    6.0 ┤                             │  │  │  p < 0.001
+        │              ──┬──          └──┼──┘
+    5.0 ┤             ┌──┼──┐            │      ***
+        │             │  │  │         ──┴──   p < 0.001
+    4.0 ┤             └──┼──┘
+        │   ──┬──        │
+    3.0 ┤  ┌──┼──┐     ──┴──
+        │  │  │  │
+    2.0 ┤  └──┼──┘                     ***
+        │     │                       p < 0.001
+    1.0 ┤   ──┴──
+        └────────────────────────────────────────
+            setosa    versicolor    virginica
+
+All pairwise comparisons significant (ANOVA F=1180, p<0.001)
+Effect size: η² = 0.94 (very large)
+```
+
+---
+
+### Classification Insight
+
+**You:** Which measurement best separates the species?
+
+**AI:** *Creates discriminability summary:*
+```
+            Feature Discriminability for Species Classification
+
+  Feature              Separation Score    Best Threshold
+  ─────────────────────────────────────────────────────────
+  petal_length         ████████████████████  0.94    2.5 cm
+  petal_width          ███████████████████   0.92    0.75 cm
+  sepal_length         ████████████          0.62    5.5 cm
+  sepal_width          ██████                0.36    3.0 cm
+
+                 Confusion Matrix (petal_length < 2.5)
+               ┌─────────────────────────────────────┐
+               │  Predicted setosa  │ Predicted other │
+  ─────────────┼───────────────────┼─────────────────┤
+  True setosa  │        50         │        0        │
+  True other   │         0         │       100       │
+               └───────────────────┴─────────────────┘
+
+  Petal length alone achieves 100% accuracy for setosa detection.
+```
+
+---
+
+### Export
+
+**You:** Export the full comparison for the methods section of my paper.
+
+**AI:** *Creates publication export:*
+```
+Created iris-species-comparison.html
 
 Includes:
-- Executive summary chart (shown above)
-- Detailed breakdowns for each metric
+- Multi-panel box plot comparison
 - Statistical test results
-- Sample sizes and confidence intervals
+- Feature importance ranking
+- Interactive exploration
 
-Click "Download PNG" for slides or "Download SVG" for editing.
+Suitable for supplementary materials.
 ```
 
 ---
 
-## Comparison Patterns
+## Analysis Patterns
 
-This analysis demonstrated:
-1. Grouped bar charts for rate comparison
-2. Side-by-side histograms for distributions
+This session demonstrated:
+1. Mean comparison with bar charts
+2. Distribution comparison with box plots
 3. Overlaid density plots for direct comparison
-4. Box plots for spread and outliers
+4. Multi-panel layouts for multiple variables
 5. Statistical significance annotations
-6. Multi-panel executive summaries
+6. Feature importance for classification
 
-All insights discovered through conversation, not code.
+All insights discovered through conversation with real data.

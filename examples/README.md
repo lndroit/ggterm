@@ -1,34 +1,51 @@
 # ggterm Examples
 
-AI-forward examples demonstrating prompt-driven data visualization.
+AI-forward examples demonstrating prompt-driven data visualization with real datasets.
 
-These examples show how to use natural language prompts with AI assistants (Claude, GPT, etc.) to create terminal visualizations using ggterm.
+## Bundled Datasets
+
+These examples use datasets built into ggterm:
+
+| Dataset | Rows | Columns | Load Command |
+|---------|------|---------|--------------|
+| **iris** | 150 | sepal_length, sepal_width, petal_length, petal_width, species | `.data iris` |
+| **mtcars** | 16 | mpg, cyl, hp, wt, name | `.data mtcars` |
+| **sample** | n | x, y, group, size | `.data sample <n>` |
 
 ## Vignettes
 
-| Example | Description |
-|---------|-------------|
-| [01-exploratory-analysis](./01-exploratory-analysis.md) | Explore an unfamiliar dataset through conversation |
-| [02-publication-figures](./02-publication-figures.md) | Create publication-ready figures iteratively |
-| [03-streaming-dashboard](./03-streaming-dashboard.md) | Build a real-time monitoring dashboard |
-| [04-comparative-analysis](./04-comparative-analysis.md) | Compare distributions across groups |
+| Example | Dataset | Description |
+|---------|---------|-------------|
+| [01-exploratory-analysis](./01-exploratory-analysis.md) | mtcars | Explore car performance through conversation |
+| [02-publication-figures](./02-publication-figures.md) | iris | Create publication-ready species comparison |
+| [03-streaming-dashboard](./03-streaming-dashboard.md) | sample | Build real-time monitoring dashboard |
+| [04-comparative-analysis](./04-comparative-analysis.md) | iris | Compare distributions across species |
 
 ## Quick Start
 
 Give your AI assistant access to ggterm, then use natural language:
 
 ```
-"Load the sales data and show me the trend over time"
+"Load the iris dataset and show me sepal length vs petal length"
 
-"What's the distribution of customer ages? Are there any outliers?"
+"Color by species"
 
-"Create a scatter plot of price vs quality, colored by category"
+"Add reference lines at the classification boundaries"
 
-"Add a reference line at the mean value"
+"Export for my paper"
+```
+
+Or try with mtcars:
+
+```
+"Load mtcars and show me the relationship between weight and fuel efficiency"
+
+"Color by number of cylinders"
+
+"Which cars have the best efficiency for their weight?"
 ```
 
 ## Requirements
 
 - Node.js 18+
 - An AI assistant with code execution (Claude Code, Cursor, etc.)
-- Data files (CSV, JSON, or JSONL)

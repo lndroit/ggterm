@@ -1,10 +1,18 @@
 # Publication Figures
 
-This vignette demonstrates iterative refinement of visualizations for publication through natural language.
+This vignette demonstrates creating publication-ready figures using the **iris** dataset through iterative refinement.
 
-## Scenario
+## Dataset: iris
 
-You're preparing figures for a paper on gene expression differences between treatment groups.
+Fisher's classic iris dataset with measurements for 150 flowers across 3 species:
+
+| Column | Description |
+|--------|-------------|
+| sepal_length | Sepal length in cm |
+| sepal_width | Sepal width in cm |
+| petal_length | Petal length in cm |
+| petal_width | Petal width in cm |
+| species | setosa, versicolor, or virginica |
 
 ---
 
@@ -12,178 +20,177 @@ You're preparing figures for a paper on gene expression differences between trea
 
 ### Initial Plot
 
-**You:** I have expression data in `results.json`. Create a volcano plot showing fold change vs significance.
+**You:** Load the iris dataset. Show me petal length vs petal width.
 
-**AI:** *Creates initial plot:*
+**AI:** *Creates initial scatter plot:*
 ```
-                           Volcano Plot
-   -log10(p)
-    12 ┤●                                              ●
-       │
-    10 ┤  ●                                          ●
-       │    ●●                                    ●●
-     8 ┤      ●●●                              ●●●
-       │         ●●●●                      ●●●●
-     6 ┤            ●●●●●●            ●●●●●●
-       │                 ●●●●●●●●●●●●●
-     4 ┤                      ●●●●●●
-       │                  ●●●●●●●●●●●●
-     2 ┤              ●●●●●●●●●●●●●●●●●●
-       │          ●●●●●●●●●●●●●●●●●●●●●●●
-     0 ┤●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●
-       └────────────────────────────────────────────
-        -4      -2       0       2       4
-                    log2 Fold Change
+                    Petal Dimensions
+  petal_width
+    2.5 ┤                              ●●●●●
+        │                           ●●●●●●●●
+    2.0 ┤                        ●●●●●●●●●
+        │                     ●●●●●●●●●
+    1.5 ┤                  ●●●●●●●●
+        │               ●●●●●●●
+    1.0 ┤            ●●●●●●
+        │
+    0.5 ┤
+        │●●●●●●●●●●●●
+    0.0 ┤
+        └──────────────────────────────────────
+         1      2      3      4      5      6
+                    Petal Length (cm)
+
+Two clear clusters visible.
 ```
 
 ---
 
-### Adding Thresholds
+### Adding Species
 
-**You:** Add reference lines at the significance cutoffs: p=0.05 and fold change of ±1.5.
+**You:** Color by species to see the groupings.
+
+**AI:** *Adds species color encoding:*
+```
+                 Petal Dimensions by Species
+  petal_width
+    2.5 ┤                              ■■■■■
+        │                           ■■■■■■■■
+    2.0 ┤                        ■■■■■■■■■
+        │                     ■■■■●●●●●
+    1.5 ┤                  ●●●●●●●●
+        │               ●●●●●●●
+    1.0 ┤            ●●●●●●
+        │
+    0.5 ┤
+        │▲▲▲▲▲▲▲▲▲▲▲▲
+    0.0 ┤
+        └──────────────────────────────────────
+         1      2      3      4      5      6
+
+        ▲ setosa    ● versicolor    ■ virginica
+
+Setosa (▲) clearly separable. Versicolor/virginica overlap.
+```
+
+---
+
+### Adding Decision Boundaries
+
+**You:** Add reference lines at petal length 2.5 and petal width 0.75 to show the species boundaries.
 
 **AI:** *Adds reference lines:*
 ```
-                           Volcano Plot
-   -log10(p)
-    12 ┤●            │                    │          ●
-       │             │                    │
-    10 ┤  ●          │                    │        ●
-       │    ●●       │                    │     ●●
-     8 ┤      ●●●    │                    │  ●●●
-       │         ●●●●│                    │●●●
-     6 ┤            ●│●●●            ●●●●●│
-       │             │   ●●●●●●●●●●●●     │
-     4 ┤             │        ●●●●●●      │
-       │             │    ●●●●●●●●●●●●    │
-     2 ┤─────────────│●●●●●●●●●●●●●●●●●●──│──── p=0.05
-       │         ●●●●│●●●●●●●●●●●●●●●●●●●●│●
-     0 ┤●●●●●●●●●●●●●│●●●●●●●●●●●●●●●●●●●●│●●●●●●●●●●
-       └────────────────────────────────────────────
-        -4      -2  -1.5  0   1.5  2       4
-                    log2 Fold Change
+                 Petal Dimensions by Species
+  petal_width
+    2.5 ┤             │                ■■■■■
+        │             │             ■■■■■■■■
+    2.0 ┤             │          ■■■■■■■■■
+        │             │       ■■■■●●●●●
+    1.5 ┤             │    ●●●●●●●●
+        │             │ ●●●●●●●
+    1.0 ┤             │●●●●●
+        │             │
+   0.75 ┤─────────────┼────────────────────────
+        │▲▲▲▲▲▲▲▲▲▲▲▲ │
+    0.0 ┤             │
+        └──────────────────────────────────────
+         1     2    2.5    4      5      6
 
-Significant & upregulated: 47 genes (upper right)
-Significant & downregulated: 32 genes (upper left)
+Setosa: petal_length < 2.5 AND petal_width < 0.75
 ```
 
 ---
 
-### Highlighting Genes of Interest
+### Faceted View
 
-**You:** Highlight the top 5 most significant genes with labels.
+**You:** Show each species in its own panel for clearer comparison.
 
-**AI:** *Adds labels to key points:*
+**AI:** *Creates faceted plot:*
 ```
-                           Volcano Plot
-   -log10(p)
-    12 ┤●BRCA1        │                    │        TP53●
-       │             │                    │
-    10 ┤  ●MYC        │                    │      EGFR●
-       │    ●●       │                    │     ●●
-     8 ┤      ●●●    │                    │  ●●●KRAS
-       │         ●●●●│                    │●●●
-     6 ┤            ●│●●●            ●●●●●│
-       │             │   ●●●●●●●●●●●●     │
-     4 ┤             │        ●●●●●●      │
-       │             │    ●●●●●●●●●●●●    │
-     2 ┤─────────────│●●●●●●●●●●●●●●●●●●──│────
-       │         ●●●●│●●●●●●●●●●●●●●●●●●●●│●
-     0 ┤●●●●●●●●●●●●●│●●●●●●●●●●●●●●●●●●●●│●●●●●●●●●●
-       └────────────────────────────────────────────
-        -4      -2  -1.5  0   1.5  2       4
-                    log2 Fold Change
-```
+┌─────────── setosa ────────────┐  ┌────────── versicolor ─────────┐
+│ petal_width                   │  │ petal_width                   │
+│  0.6 ┤    ●●●●●               │  │  1.8 ┤              ●●●       │
+│      │   ●●●●●●●              │  │      │           ●●●●●●       │
+│  0.4 ┤  ●●●●●●●●●             │  │  1.4 ┤        ●●●●●●●●        │
+│      │ ●●●●●●●●●●             │  │      │     ●●●●●●●●           │
+│  0.2 ┤●●●●●●●●                │  │  1.0 ┤  ●●●●●●●               │
+│      └───────────────────     │  │      └───────────────────     │
+│       1.0   1.2   1.4   1.6   │  │       3.0   3.5   4.0   4.5   │
+│          petal_length         │  │          petal_length         │
+└───────────────────────────────┘  └───────────────────────────────┘
 
----
-
-### Color by Category
-
-**You:** Color points by pathway: DNA repair, cell cycle, or other.
-
-**AI:** *Applies categorical coloring:*
-```
-                      Volcano Plot by Pathway
-
-   -log10(p)                                    ● DNA Repair
-    12 ┤●             │                    │        ●  ■ Cell Cycle
-       │             │                    │            ▲ Other
-    10 ┤  ■          │                    │      ●
-       │    ●■       │                    │     ■●
-     8 ┤      ▲●■    │                    │  ●■▲
-       │         ▲▲▲▲│                    │▲▲▲
-     6 ┤            ▲│▲▲▲            ▲▲▲▲▲│
-       │             │   ▲▲▲▲▲▲▲▲▲▲▲▲     │
-     4 ┤             │        ▲▲▲▲▲▲      │
-       │             │    ▲▲▲▲▲▲▲▲▲▲▲▲    │
-     2 ┤─────────────│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲──│────
-       │         ▲▲▲▲│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲│▲
-     0 ┤▲▲▲▲▲▲▲▲▲▲▲▲▲│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲│▲▲▲▲▲▲▲▲▲▲
-       └────────────────────────────────────────────
-        -4      -2       0       2       4
-
-DNA repair genes show strongest upregulation (right side).
+┌─────────── virginica ─────────┐
+│ petal_width                   │
+│  2.5 ┤           ●●●●●        │
+│      │        ●●●●●●●●        │
+│  2.0 ┤     ●●●●●●●●●●         │
+│      │  ●●●●●●●●●             │
+│  1.5 ┤●●●●●●                  │
+│      └───────────────────     │
+│       4.5   5.0   5.5   6.0   │
+│          petal_length         │
+└───────────────────────────────┘
 ```
 
 ---
 
-### Adjusting for Publication
+### Publication Polish
 
-**You:** This looks good. Make it publication-ready - add a proper title and axis labels.
+**You:** This looks good. Make it publication-ready with proper title and axis labels.
 
-**AI:** *Refines labels:*
+**AI:** *Applies publication styling:*
 ```
-    Differential Gene Expression: Treatment vs Control
+    Figure 1: Petal Morphology Across Iris Species
 
-   Significance
-   (-log₁₀ p-value)                             ● DNA Repair
-    12 ┤●             │                    │        ●  ■ Cell Cycle
-       │             │                    │            ▲ Other
-    10 ┤  ■          │                    │      ●
-       │    ●■       │                    │     ■●
-     8 ┤      ▲●■    │                    │  ●■▲
-       │         ▲▲▲▲│                    │▲▲▲
-     6 ┤            ▲│▲▲▲            ▲▲▲▲▲│
-       │             │   ▲▲▲▲▲▲▲▲▲▲▲▲     │
-     4 ┤             │        ▲▲▲▲▲▲      │
-       │             │    ▲▲▲▲▲▲▲▲▲▲▲▲    │
-     2 ┤─────────────│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲──│────
-       │         ▲▲▲▲│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲│▲
-     0 ┤▲▲▲▲▲▲▲▲▲▲▲▲▲│▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲│▲▲▲▲▲▲▲▲▲▲
-       └────────────────────────────────────────────
-        -4      -2       0       2       4
-              Effect Size (log₂ Fold Change)
+  Petal Width (cm)                        ● I. setosa
+    2.5 ┤             │                ■■  ▲ I. versicolor
+        │             │             ■■■■■  ■ I. virginica
+    2.0 ┤             │          ■■■■■■■
+        │             │       ■■■▲▲▲▲▲
+    1.5 ┤             │    ▲▲▲▲▲▲▲▲
+        │             │ ▲▲▲▲▲▲▲
+    1.0 ┤             │▲▲▲▲▲
+        │             │
+   0.75 ┤─────────────┼──────────────────────── threshold
+        │●●●●●●●●●●●● │
+    0.0 ┤             │
+        └──────────────────────────────────────────────
+         1      2    2.5    4      5      6
 
-       Dashed lines: |FC| > 1.5, p < 0.05
+              Petal Length (cm)
+
+    Dashed lines indicate species classification boundaries.
+    n = 150 (50 per species)
 ```
 
 ---
 
 ### Export
 
-**You:** Export as SVG for the journal submission.
+**You:** Export as SVG for journal submission.
 
-**AI:** *Exports to HTML with download options:*
+**AI:** *Creates publication export:*
 ```
-Created volcano-plot.html
+Created iris-petal-morphology.html
 
 Open in browser and click "Download SVG" for vector graphics.
-The SVG can be edited in Illustrator/Inkscape if needed.
+The SVG is suitable for Nature/Science figure requirements.
 
 Figure dimensions: 600x400px (adjustable in Vega-Lite spec)
+Resolution: Vector (infinite)
 ```
 
 ---
 
-## Iteration Summary
+## Figure Evolution
 
 The figure evolved through conversation:
-1. Basic scatter → Volcano layout
-2. Added statistical thresholds
-3. Labeled key genes
-4. Colored by biological pathway
-5. Polished labels for publication
+1. Basic scatter plot
+2. Added species color encoding
+3. Added classification boundaries
+4. Faceted by species
+5. Publication styling and labels
 6. Exported as vector graphics
 
 Total prompts: 6
-Time to publication-ready figure: ~2 minutes

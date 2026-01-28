@@ -8,7 +8,7 @@
 ggterm lets you create terminal visualizations by describing what you want in natural language. No commands to memorize, no syntax to learn.
 
 ```
-You: Show me the relationship between price and square footage, colored by neighborhood.
+You: Load the iris dataset and show me sepal length vs petal length, colored by species.
 
 AI: [Creates scatter plot with automatic scales, legends, and color mapping]
 ```
@@ -19,22 +19,32 @@ ggterm is designed for AI assistants. You describe what you want to see, and you
 
 | You say... | AI does... |
 |------------|-----------|
-| "What's in this CSV file?" | Inspects columns, types, and distributions |
-| "Show me a histogram of income" | Creates histogram with automatic binning |
-| "Add a reference line at the median" | Overlays horizontal line annotation |
-| "Color by region and add a title" | Updates aesthetics and labels |
-| "Export for my presentation" | Generates HTML with PNG/SVG download |
+| "Load the iris dataset" | Loads 150 rows with sepal/petal measurements by species |
+| "Show sepal length vs petal length" | Creates scatter plot with proper axis labels |
+| "Color by species" | Adds color encoding with legend |
+| "Add a trend line" | Overlays linear regression |
+| "Export for my paper" | Generates HTML with PNG/SVG download |
+
+## Bundled Datasets
+
+ggterm includes classic datasets for immediate exploration:
+
+| Dataset | Rows | Columns | Description |
+|---------|------|---------|-------------|
+| **iris** | 150 | sepal_length, sepal_width, petal_length, petal_width, species | Fisher's iris flower measurements |
+| **mtcars** | 16 | mpg, cyl, hp, wt, name | Motor Trend car road tests |
+| **sample** | n | x, y, group, size | Generated random data |
 
 ## Examples
 
-See our [example vignettes](./examples/) for complete workflows:
+See our [example vignettes](./examples/) for complete workflows using real data:
 
-| Example | What you'll learn |
-|---------|-------------------|
-| [Exploratory Analysis](./examples/01-exploratory-analysis.md) | Explore unfamiliar datasets through conversation |
-| [Publication Figures](./examples/02-publication-figures.md) | Iteratively refine figures for papers |
-| [Streaming Dashboard](./examples/03-streaming-dashboard.md) | Build real-time monitoring displays |
-| [Comparative Analysis](./examples/04-comparative-analysis.md) | Compare A/B tests and distributions |
+| Example | Dataset | What you'll learn |
+|---------|---------|-------------------|
+| [Exploratory Analysis](./examples/01-exploratory-analysis.md) | mtcars | Explore car performance data through conversation |
+| [Publication Figures](./examples/02-publication-figures.md) | iris | Create publication-ready species comparison |
+| [Streaming Dashboard](./examples/03-streaming-dashboard.md) | sample | Build real-time monitoring displays |
+| [Comparative Analysis](./examples/04-comparative-analysis.md) | iris | Compare distributions across species |
 
 ## Getting Started
 
@@ -47,9 +57,9 @@ If you're using Claude Code, Cursor, or another AI coding assistant:
    npm install @ggterm/core
    ```
 
-2. Ask your AI to visualize your data:
+2. Ask your AI to visualize data:
    ```
-   "I have sales_data.csv - show me revenue over time"
+   "Load the iris dataset and show me how petal dimensions relate to species"
    ```
 
 That's it. The AI handles the rest.
@@ -64,22 +74,24 @@ npx @ggterm/core
 
 ```
 ggterm> .data iris
-Loaded Iris dataset (150 rows)
+Loaded Iris dataset: 150 rows, 5 columns
 
-ggterm> gg(data).aes({x: "sepal_length", y: "sepal_width", color: "species"}).geom(geom_point())
+ggterm> gg(data).aes({x: "sepal_length", y: "petal_length", color: "species"}).geom(geom_point())
 
-                    Iris Dataset
-  4.5 ┤                    ●
-      │                ●  ●●●
-  4.0 ┤    ▲▲▲      ●●●●●●●●
-      │  ▲▲▲▲▲▲▲   ●●●●●●●    ■■
-  3.5 ┤▲▲▲▲▲▲▲▲▲▲  ●●●●●    ■■■■■
-      │  ▲▲▲▲▲▲▲    ●●●   ■■■■■■■■
-  3.0 ┤    ▲▲▲▲      ●●  ■■■■■■■■■■
-      │      ▲           ■■■■■■■
-  2.5 ┤                   ■■■■
-      │                    ■■
-  2.0 ┤
+              Sepal vs Petal Length
+  7.0 ┤                         ■■■■
+      │                      ■■■■■■■■
+  6.0 ┤                   ■■■■■■■■
+      │               ●●●●●■■■■■
+  5.0 ┤            ●●●●●●●●●
+      │         ●●●●●●●●
+  4.0 ┤       ●●●●●●
+      │     ●●●●
+  3.0 ┤   ●●●
+      │
+  2.0 ┤▲▲▲▲▲▲
+      │▲▲▲▲▲▲▲
+  1.0 ┤▲▲▲▲
       └──────────────────────────────────
        4.5   5.0   5.5   6.0   6.5   7.0
 
@@ -112,10 +124,10 @@ If you want to use ggterm programmatically:
 import { gg, geom_point, scale_color_viridis } from '@ggterm/core'
 
 const plot = gg(data)
-  .aes({ x: 'pc1', y: 'pc2', color: 'cluster' })
+  .aes({ x: 'sepal_length', y: 'petal_length', color: 'species' })
   .geom(geom_point())
   .scale(scale_color_viridis())
-  .labs({ title: 'PCA Results' })
+  .labs({ title: 'Iris Dataset' })
 
 console.log(plot.render({ width: 80, height: 24 }))
 ```
