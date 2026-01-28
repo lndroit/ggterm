@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1976d2"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="white"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#333">Figure 4: Conversational Data Analysis Workflow</text>
+
+  <!-- Column headers -->
+  <text x="120" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#7b1fa2">USER</text>
+  <text x="400" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#1976d2">AI AGENT</text>
+  <text x="700" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#43a047">ggterm</text>
+
+  <!-- Vertical divider lines -->
+  <line x1="250" y1="70" x2="250" y2="520" stroke="#eee" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="550" y1="70" x2="550" y2="520" stroke="#eee" stroke-width="2" stroke-dasharray="5,5"/>
+
+  <!-- Step 1: Load data -->
+  <rect x="30" y="90" width="180" height="50" rx="25" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="120" y="112" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">"Load the iris</text>
+  <text x="120" y="128" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">dataset"</text>
+
+  <line x1="210" y1="115" x2="280" y2="115" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="290" y="90" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="390" y="112" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Invokes data-load skill</text>
+  <text x="390" y="128" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#666">.data iris</text>
+
+  <line x1="490" y1="115" x2="560" y2="115" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="90" width="160" height="50" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="650" y="112" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Loads 150 rows</text>
+  <text x="650" y="128" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#666">5 columns</text>
+
+  <!-- Step 2: Create plot -->
+  <rect x="30" y="170" width="180" height="50" rx="25" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="120" y="192" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">"Show petal length</text>
+  <text x="120" y="208" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">vs width"</text>
+
+  <line x1="210" y1="195" x2="280" y2="195" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="290" y="160" width="200" height="70" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="390" y="180" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Generates ggterm code</text>
+  <text x="390" y="198" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#666">gg(data)</text>
+  <text x="390" y="212" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#666">.aes({x:'petal_length',</text>
+  <text x="390" y="224" text-anchor="middle" font-family="Courier, monospace" font-size="9" fill="#666">y:'petal_width'})</text>
+
+  <line x1="490" y1="195" x2="560" y2="195" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="165" width="160" height="60" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="650" y="185" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Renders plot</text>
+  <text x="650" y="205" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#666">●●● ●●●</text>
+  <text x="650" y="218" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#666">●●●●●</text>
+
+  <!-- Step 3: Add color -->
+  <rect x="30" y="260" width="180" height="40" rx="20" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="120" y="285" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">"Color by species"</text>
+
+  <line x1="210" y1="280" x2="280" y2="280" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="290" y="255" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="390" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Adds to specification</text>
+  <text x="390" y="295" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#666">.aes({color:'species'})</text>
+
+  <line x1="490" y1="280" x2="560" y2="280" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="250" width="160" height="70" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="650" y="270" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Re-renders</text>
+  <text x="620" y="290" text-anchor="middle" font-family="Courier, monospace" font-size="11" fill="#1976d2">●</text>
+  <text x="650" y="290" text-anchor="middle" font-family="Courier, monospace" font-size="11" fill="#ff9800">▲</text>
+  <text x="680" y="290" text-anchor="middle" font-family="Courier, monospace" font-size="11" fill="#43a047">■</text>
+  <text x="650" y="308" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" fill="#666">setosa versicolor virginica</text>
+
+  <!-- Step 4: Export -->
+  <rect x="30" y="350" width="180" height="50" rx="25" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="120" y="372" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">"Export for</text>
+  <text x="120" y="388" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">my paper"</text>
+
+  <line x1="210" y1="375" x2="280" y2="375" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="290" y="350" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="390" y="372" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Invokes export skill</text>
+  <text x="390" y="390" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#666">ggterm-publish</text>
+
+  <line x1="490" y1="375" x2="560" y2="375" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="345" width="160" height="60" rx="8" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="650" y="368" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Generates HTML</text>
+  <text x="650" y="386" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#666">+ Vega-Lite spec</text>
+  <text x="650" y="400" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#666">+ PNG/SVG</text>
+
+  <!-- Output file -->
+  <rect x="760" y="355" width="120" height="40" rx="4" fill="#fff8e1" stroke="#ffa000" stroke-width="2"/>
+  <text x="820" y="380" text-anchor="middle" font-family="Courier, monospace" font-size="10" fill="#333">iris-plot.html</text>
+  <line x1="730" y1="375" x2="755" y2="375" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Key features box -->
+  <rect x="50" y="440" width="800" height="100" rx="8" fill="#fafafa" stroke="#ddd" stroke-width="1"/>
+  <text x="450" y="465" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#333">KEY FEATURES</text>
+
+  <circle cx="80" cy="490" r="4" fill="#1976d2"/>
+  <text x="95" y="494" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Natural language → Declarative code: No syntax memorization required</text>
+
+  <circle cx="80" cy="515" r="4" fill="#43a047"/>
+  <text x="95" y="519" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Incremental refinement: Each request layers onto previous specification</text>
+
+  <circle cx="500" cy="490" r="4" fill="#ff9800"/>
+  <text x="515" y="494" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Automatic history: All plots stored with provenance</text>
+
+  <circle cx="500" cy="515" r="4" fill="#7b1fa2"/>
+  <text x="515" y="519" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#333">Publication export: One command generates figures</text>
+</svg>
