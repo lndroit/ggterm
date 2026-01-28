@@ -1,187 +1,140 @@
 # ggterm
 
 [![npm version](https://img.shields.io/npm/v/@ggterm/core.svg)](https://www.npmjs.com/package/@ggterm/core)
-[![npm downloads](https://img.shields.io/npm/dm/@ggterm/core.svg)](https://www.npmjs.com/package/@ggterm/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Grammar of Graphics for Terminal User Interfaces.
+**Data visualization through conversation.**
 
-**ggterm** is a TypeScript library implementing Leland Wilkinson's Grammar of Graphics for terminal-based rendering. Create publication-quality data visualizations directly in your terminal.
+ggterm lets you create terminal visualizations by describing what you want in natural language. No commands to memorize, no syntax to learn.
 
-## Why ggterm?
+```
+You: Show me the relationship between price and square footage, colored by neighborhood.
 
-Current terminal plotting tools are either:
-- **Imperative** (plotext, bashplotlib) — require manual coordinate management
-- **Low-level** (direct curses/ncurses) — no abstraction for statistical graphics
-- **Output-only** (gnuplot to ASCII) — no interactivity or reactive updates
+AI: [Creates scatter plot with automatic scales, legends, and color mapping]
+```
 
-ggterm provides:
-- Declarative specification of visual mappings
-- Composable layers that build complex plots incrementally
-- Automatic handling of scales, legends, and axes
-- Familiar API for R/Python users (ggplot2, plotnine)
+## How It Works
 
-## Quick Example
+ggterm is designed for AI assistants. You describe what you want to see, and your AI creates the visualization:
+
+| You say... | AI does... |
+|------------|-----------|
+| "What's in this CSV file?" | Inspects columns, types, and distributions |
+| "Show me a histogram of income" | Creates histogram with automatic binning |
+| "Add a reference line at the median" | Overlays horizontal line annotation |
+| "Color by region and add a title" | Updates aesthetics and labels |
+| "Export for my presentation" | Generates HTML with PNG/SVG download |
+
+## Examples
+
+See our [example vignettes](./examples/) for complete workflows:
+
+| Example | What you'll learn |
+|---------|-------------------|
+| [Exploratory Analysis](./examples/01-exploratory-analysis.md) | Explore unfamiliar datasets through conversation |
+| [Publication Figures](./examples/02-publication-figures.md) | Iteratively refine figures for papers |
+| [Streaming Dashboard](./examples/03-streaming-dashboard.md) | Build real-time monitoring displays |
+| [Comparative Analysis](./examples/04-comparative-analysis.md) | Compare A/B tests and distributions |
+
+## Getting Started
+
+### With an AI Assistant (Recommended)
+
+If you're using Claude Code, Cursor, or another AI coding assistant:
+
+1. Make sure ggterm is available in your project:
+   ```bash
+   npm install @ggterm/core
+   ```
+
+2. Ask your AI to visualize your data:
+   ```
+   "I have sales_data.csv - show me revenue over time"
+   ```
+
+That's it. The AI handles the rest.
+
+### Interactive REPL
+
+For hands-on exploration:
+
+```bash
+npx @ggterm/core
+```
+
+```
+ggterm> .data iris
+Loaded Iris dataset (150 rows)
+
+ggterm> gg(data).aes({x: "sepal_length", y: "sepal_width", color: "species"}).geom(geom_point())
+
+                    Iris Dataset
+  4.5 ┤                    ●
+      │                ●  ●●●
+  4.0 ┤    ▲▲▲      ●●●●●●●●
+      │  ▲▲▲▲▲▲▲   ●●●●●●●    ■■
+  3.5 ┤▲▲▲▲▲▲▲▲▲▲  ●●●●●    ■■■■■
+      │  ▲▲▲▲▲▲▲    ●●●   ■■■■■■■■
+  3.0 ┤    ▲▲▲▲      ●●  ■■■■■■■■■■
+      │      ▲           ■■■■■■■
+  2.5 ┤                   ■■■■
+      │                    ■■
+  2.0 ┤
+      └──────────────────────────────────
+       4.5   5.0   5.5   6.0   6.5   7.0
+
+      ▲ setosa  ● versicolor  ■ virginica
+```
+
+## What You Can Create
+
+- **Scatter plots** - Relationships between variables
+- **Line charts** - Trends over time
+- **Histograms** - Distributions of single variables
+- **Box plots** - Compare distributions across groups
+- **Bar charts** - Categorical comparisons
+- **Faceted plots** - Small multiples for comparison
+- **And more** - 30+ geometry types available
+
+## Export Options
+
+Export any plot to HTML for sharing or publication:
+
+- Interactive pan/zoom in browser
+- Download as PNG or SVG
+- Full Vega-Lite spec for further editing
+
+## For Developers
+
+If you want to use ggterm programmatically:
 
 ```typescript
 import { gg, geom_point, scale_color_viridis } from '@ggterm/core'
 
 const plot = gg(data)
-  .aes({ x: 'pc1', y: 'pc2', color: 'group' })
-  .geom(geom_point({ size: 2 }))
+  .aes({ x: 'pc1', y: 'pc2', color: 'cluster' })
+  .geom(geom_point())
   .scale(scale_color_viridis())
-  .labs({
-    title: 'PCA Analysis',
-    x: 'PC1 (45%)',
-    y: 'PC2 (23%)'
-  })
+  .labs({ title: 'PCA Results' })
 
-// Render to string
 console.log(plot.render({ width: 80, height: 24 }))
 ```
 
-## Interactive REPL
+See the [API Reference](./docs/API.md) for full documentation.
 
-Explore data and build plots interactively:
+## Why ggterm?
 
-```bash
-npx ggterm
-```
+ggterm implements the [Grammar of Graphics](https://www.amazon.com/Grammar-Graphics-Statistics-Computing/dp/0387245448) - the same foundation as R's ggplot2 and Python's plotnine. This means:
 
-```
-ggterm> .data sample 30
-Generated 30 sample rows with columns: x, y, group, size
+- **Declarative** - Describe what you want, not how to draw it
+- **Composable** - Build complex plots by layering simple elements
+- **Consistent** - Same patterns work across all plot types
 
-ggterm> gg(data).aes({x: "x", y: "y", color: "group"}).geom(geom_point())
+## Resources
 
-  My First Plot
-  40 ┤                                    ●
-     │                        ●       ●
-  30 ┤    ●   ●       ●   ●       ●
-     │        ●   ●           ●       ●
-  20 ┤●           ●   ●   ●
-     │    ●           ●
-  10 ┤
-     └────────────────────────────────────
-      0    5    10   15   20   25   30
-```
-
-## AI-Forward Examples
-
-ggterm is designed for natural language interaction with AI assistants. See our [example vignettes](./examples/) for prompt-driven workflows:
-
-| Example | Description |
-|---------|-------------|
-| [Exploratory Analysis](./examples/01-exploratory-analysis.md) | Explore unfamiliar datasets through conversation |
-| [Publication Figures](./examples/02-publication-figures.md) | Iteratively refine figures for publication |
-| [Streaming Dashboard](./examples/03-streaming-dashboard.md) | Build real-time monitoring dashboards |
-| [Comparative Analysis](./examples/04-comparative-analysis.md) | Compare distributions and A/B test results |
-
-## Features
-
-- **Interactive REPL**: Build plots interactively with `npx ggterm`
-- **CLI Tool**: Quick plotting from CSV/JSON/JSONL files
-- **30+ Geometries**: Points, lines, bars, histograms, boxplots, Q-Q plots, density, contours, and more
-- **Grammar Layers**: Data, Aesthetics, Geometries, Statistics, Scales, Coordinates, Facets, Themes
-- **Faceting**: Small multiples with `facet_wrap()` and `facet_grid()`
-- **Reference Lines**: Add hline, vline, abline with `+hline@50` syntax
-- **Export to HTML**: Interactive Vega-Lite exports with PNG/SVG download
-- **Plot History**: Automatic provenance tracking with search and retrieval
-- **Terminal Detection**: Automatic color capability detection and graceful degradation
-
-## Installation
-
-```bash
-npm install @ggterm/core
-```
-
-## CLI Quick Start
-
-Plot directly from CSV, JSON, or JSONL files:
-
-```bash
-# Basic scatter plot
-bun packages/core/src/cli-plot.ts data.csv x y
-
-# JSON and JSONL support
-bun packages/core/src/cli-plot.ts data.json x y
-bun packages/core/src/cli-plot.ts data.jsonl x y color
-
-# With color mapping and title
-bun packages/core/src/cli-plot.ts data.csv x y category "My Plot"
-
-# Different geometry types
-bun packages/core/src/cli-plot.ts data.csv x y - "Title" histogram
-bun packages/core/src/cli-plot.ts data.csv x y - "Title" boxplot
-
-# Reference lines
-bun packages/core/src/cli-plot.ts data.csv x y - - point+hline@50
-bun packages/core/src/cli-plot.ts data.csv x y - - line+vline@2.5+hline@100
-
-# Faceted plot (small multiples)
-bun packages/core/src/cli-plot.ts data.csv x y color "Title" point facet_var
-```
-
-**29 CLI-exposed geoms**: point, line, path, step, bar, col, histogram, freqpoly, boxplot, violin, area, ribbon, rug, errorbar, errorbarh, crossbar, linerange, pointrange, smooth, segment, rect, raster, tile, text, label, contour, contour_filled, density_2d, qq
-
-**Reference lines**: `+hline@<y>`, `+vline@<x>`, `+abline@<slope>,<intercept>`
-
-## Export to HTML
-
-Create interactive, publication-ready visualizations:
-
-```bash
-# Export last plot to HTML with Vega-Lite
-bun packages/core/src/cli-plot.ts export output.html
-
-# Export includes:
-# - Interactive pan/zoom
-# - PNG/SVG download buttons
-# - Full Vega-Lite spec for further editing
-```
-
-## Plot History
-
-All plots are automatically saved with provenance metadata:
-
-```bash
-# List all plots
-bun packages/core/src/cli-plot.ts history
-
-# Search for specific plots
-bun packages/core/src/cli-plot.ts history scatter
-bun packages/core/src/cli-plot.ts history sales
-
-# Re-display a plot
-bun packages/core/src/cli-plot.ts show 2024-01-26-001
-
-# Export a historical plot
-bun packages/core/src/cli-plot.ts export 2024-01-26-001 output.html
-```
-
-## Documentation
-
-- [Quick Start](./docs/QUICKSTART.md) - Get started in 5 minutes
-- [Interactive REPL](./docs/REPL.md) - Interactive plotting guide
-- [Gallery](./docs/GALLERY.md) - Visual examples of all plot types
-- [API Reference](./docs/API.md) - Full API documentation
-- [Architecture](./docs/ARCHITECTURE.md) - Technical design
-- [Roadmap](./docs/ROADMAP.md) - Development phases
-
-### Migration Guides
-
-- [From ggplot2](./docs/MIGRATION-GGPLOT2.md) - For R users
-- [From Vega-Lite](./docs/MIGRATION-VEGALITE.md) - For Vega-Lite users
-
-### Contributing
-
-- [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-
-## Prior Art
-
-- [ggplot2](https://ggplot2.tidyverse.org/) (R) - The original grammar of graphics
-- [Vega-Lite](https://vega.github.io/vega-lite/) - JSON grammar for web
-- [plotext](https://github.com/piccolomo/plotext) (Python) - Terminal plotting
+- [Quick Start Guide](./docs/QUICKSTART.md)
+- [Visual Gallery](./docs/GALLERY.md)
+- [Migration from ggplot2](./docs/MIGRATION-GGPLOT2.md)
 
 ## License
 
