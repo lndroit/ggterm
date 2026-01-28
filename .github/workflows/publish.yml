@@ -34,5 +34,3 @@ jobs:
       - name: Publish @ggterm/core
         run: npm publish --access public --provenance
         working-directory: packages/core
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
