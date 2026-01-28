@@ -330,11 +330,11 @@ describe('createGGTerm', () => {
         const ggterm = createGGTerm({
           data: [{ x: 1, y: 10 }],
           aes: { x: 'x', y: 'y' },
-          theme: { background: { r: 0, g: 0, b: 0, a: 1 } },
+          theme: { panel: { background: '#000000' } },
           options: { autoRender: false },
         })
         const spec = ggterm.getSpec()
-        expect(spec!.theme.background).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+        expect(spec!.theme.panel.background).toBe('#000000')
         dispose()
       })
     })

@@ -76,14 +76,60 @@ interface ColumnInfo {
 }
 
 /**
- * Load and parse CSV file
+ * Check if a file exists
+ */
+function fileExists(path: string): boolean {
+  try {
+    readFileSync(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Load and parse CSV file with friendly error messages
  */
 function loadCSV(dataFile: string): { headers: string[]; data: Record<string, any>[] } {
-  const text = readFileSync(dataFile, 'utf-8')
+  // Check file exists
+  if (!fileExists(dataFile)) {
+    console.error(`\nError: File not found: ${dataFile}`)
+    console.error(`\nMake sure the file path is correct and the file exists.`)
+    console.error(`Current directory: ${process.cwd()}`)
+    process.exit(1)
+  }
+
+  let text: string
+  try {
+    text = readFileSync(dataFile, 'utf-8')
+  } catch (err: any) {
+    console.error(`\nError: Cannot read file: ${dataFile}`)
+    console.error(`Reason: ${err.message}`)
+    process.exit(1)
+  }
+
   const lines = text.trim().split('\n')
+
+  if (lines.length === 0) {
+    console.error(`\nError: File is empty: ${dataFile}`)
+    process.exit(1)
+  }
+
+  if (lines.length === 1) {
+    console.error(`\nError: File has no data rows: ${dataFile}`)
+    console.error(`The file only contains a header row. Add some data.`)
+    process.exit(1)
+  }
+
   const headers = lines[0].split(',').map(h => h.trim())
 
-  const data = lines.slice(1).map(line => {
+  if (headers.length === 0 || (headers.length === 1 && headers[0] === '')) {
+    console.error(`\nError: No columns found in header row`)
+    console.error(`Expected a comma-separated header row like: x,y,color`)
+    process.exit(1)
+  }
+
+  const data = lines.slice(1).map((line, lineNum) => {
     const values = line.split(',')
     const row: Record<string, any> = {}
     headers.forEach((h, i) => {
@@ -349,16 +395,83 @@ function handleSuggest(dataFile: string): void {
 }
 
 /**
+ * Validate that a column exists in the data
+ */
+function validateColumn(colName: string, headers: string[], argName: string): void {
+  if (colName === '-') return // Skip placeholder
+  if (!headers.includes(colName)) {
+    console.error(`\nError: Column "${colName}" not found in data`)
+    console.error(`\nAvailable columns: ${headers.join(', ')}`)
+    console.error(`\nYou specified "${colName}" for the ${argName} argument.`)
+    process.exit(1)
+  }
+}
+
+/**
+ * Validate geom type
+ */
+function validateGeomType(geomType: string): void {
+  if (!GEOM_TYPES.includes(geomType)) {
+    console.error(`\nError: Unknown geometry type "${geomType}"`)
+    console.error(`\nAvailable geom types:`)
+    // Group by category for readability
+    console.error(`  Points/Lines: point, line, path, step, smooth, segment`)
+    console.error(`  Bars/Areas:   bar, col, histogram, freqpoly, area, ribbon`)
+    console.error(`  Distributions: boxplot, violin, qq, density_2d`)
+    console.error(`  Uncertainty:  errorbar, errorbarh, crossbar, linerange, pointrange`)
+    console.error(`  2D:           tile, rect, raster, contour, contour_filled`)
+    console.error(`  Text:         text, label`)
+    console.error(`  Other:        rug`)
+    process.exit(1)
+  }
+}
+
+/**
  * Handle plot command (original behavior)
  */
 function handlePlot(args: string[]): void {
-  if (args.length < 3) {
-    printUsage()
+  if (args.length < 2) {
+    console.error(`\nError: Not enough arguments`)
+    console.error(`\nUsage: cli-plot.ts <file> <x> <y> [color] [title] [geom] [facet]`)
+    console.error(`\nExamples:`)
+    console.error(`  cli-plot.ts data.csv x y              # Scatter plot`)
+    console.error(`  cli-plot.ts data.csv value - - - histogram  # Histogram`)
+    console.error(`  cli-plot.ts data.csv x y color "Title" point`)
+    console.error(`\nTip: Use "inspect <file>" to see available columns`)
+    process.exit(1)
+  }
+
+  // Check if file argument looks like a file
+  if (!args[0].includes('.') && !fileExists(args[0])) {
+    console.error(`\nError: "${args[0]}" doesn't look like a file path`)
+    console.error(`\nDid you mean one of these commands?`)
+    console.error(`  inspect <file>  - Show column types`)
+    console.error(`  suggest <file>  - Get plot suggestions`)
+    console.error(`  history         - List saved plots`)
+    console.error(`  help            - Show full usage`)
     process.exit(1)
   }
 
   const [dataFile, x, y, color, title, geomType = 'point', facetVar] = args
-  const { data } = loadCSV(dataFile)
+  const { headers, data } = loadCSV(dataFile)
+
+  // Validate geom type first
+  validateGeomType(geomType)
+
+  // Validate column names
+  validateColumn(x, headers, 'x')
+  if (y && y !== '-') validateColumn(y, headers, 'y')
+  if (color && color !== '-') validateColumn(color, headers, 'color')
+  if (facetVar && facetVar !== '-') validateColumn(facetVar, headers, 'facet')
+
+  // Check for missing y when required
+  const geomsRequiringY = ['line', 'path', 'step', 'point', 'smooth', 'segment', 'area', 'ribbon', 'tile', 'rect', 'raster', 'contour', 'contour_filled', 'density_2d', 'text', 'label', 'col', 'errorbar', 'errorbarh', 'crossbar', 'linerange', 'pointrange']
+  if (geomsRequiringY.includes(geomType) && (!y || y === '-')) {
+    console.error(`\nError: Geometry type "${geomType}" requires a y column`)
+    console.error(`\nUsage: cli-plot.ts ${dataFile} <x> <y> [color] [title] ${geomType}`)
+    console.error(`\nIf you want a univariate plot, try: histogram, bar, qq, or freqpoly`)
+    process.exit(1)
+  }
 
   // Build plot
   // Note: y may be absent for histograms (stat computes it)

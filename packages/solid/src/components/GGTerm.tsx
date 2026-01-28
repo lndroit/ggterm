@@ -5,7 +5,7 @@
  * in terminal-based Solid.js applications.
  */
 
-import { createMemo, createEffect, onMount, onCleanup, splitProps } from 'solid-js'
+import { createMemo, createEffect, onMount, splitProps } from 'solid-js'
 import type { JSX, Accessor } from 'solid-js'
 import {
   gg,
@@ -112,7 +112,7 @@ export interface GGTermHandle {
  * ```
  */
 export function GGTerm(props: GGTermProps): JSX.Element {
-  const [local, rest] = splitProps(props, [
+  const [local, _rest] = splitProps(props, [
     'data',
     'aes',
     'geoms',

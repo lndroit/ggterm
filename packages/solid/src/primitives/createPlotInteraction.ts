@@ -4,7 +4,7 @@
  * Provides selection, hover, zoom/pan, and keyboard navigation.
  */
 
-import { createSignal, createMemo, batch } from 'solid-js'
+import { createSignal, batch } from 'solid-js'
 import type { Accessor } from 'solid-js'
 import type { DataSource } from '@ggterm/core'
 

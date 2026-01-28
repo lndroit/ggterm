@@ -4,8 +4,8 @@
  * Provides reactive plot management with automatic re-rendering.
  */
 
-import { createSignal, createMemo, createEffect, batch, onCleanup } from 'solid-js'
-import type { Accessor, Setter } from 'solid-js'
+import { createSignal, createMemo, createEffect, onCleanup } from 'solid-js'
+import type { Accessor } from 'solid-js'
 import {
   gg,
   GGPlot,
@@ -219,9 +219,9 @@ export function createGGTerm(props: CreateGGTermProps): CreateGGTermReturn {
 
   // Auto-render effect
   createEffect(() => {
-    // Track dependencies
-    const _ = data()
-    const __ = plot()
+    // Track dependencies (values not used directly, just for reactivity)
+    data()
+    plot()
     const opts = options()
 
     if (opts.autoRender) {

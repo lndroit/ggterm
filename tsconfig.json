@@ -26,7 +26,8 @@
     { "path": "./packages/render-braille" },
     { "path": "./packages/render-block" },
     { "path": "./packages/render-sixel" },
-    { "path": "./packages/opentui" }
+    { "path": "./packages/opentui" },
+    { "path": "./packages/solid" }
   ],
   "exclude": ["node_modules", "**/dist"]
 }
