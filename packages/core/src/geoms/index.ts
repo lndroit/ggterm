@@ -18,6 +18,7 @@ export { geom_rug, type RugOptions } from './rug'
 // Phase 7: Extended Grammar
 export { geom_violin, type ViolinOptions } from './violin'
 export { geom_tile, geom_raster, type TileOptions } from './tile'
+export { geom_bin2d, type Bin2dOptions } from './bin2d'
 export { geom_contour, geom_contour_filled, geom_density_2d, type ContourOptions } from './contour'
 export {
   geom_errorbar,

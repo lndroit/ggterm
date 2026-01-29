@@ -5,6 +5,9 @@
 export { stat_bin, computeBins } from './bin'
 export type { StatBinParams, BinResult } from './bin'
 
+export { stat_bin2d, computeBins2d } from './bin2d'
+export type { StatBin2dParams, Bin2dResult } from './bin2d'
+
 export { stat_count, computeCount } from './count'
 export type { StatCountParams, CountResult } from './count'
 

@@ -69,6 +69,7 @@ export {
   geom_violin,
   geom_tile,
   geom_raster,
+  geom_bin2d,
   geom_contour,
   geom_contour_filled,
   geom_density_2d,
@@ -92,6 +93,7 @@ export type {
   StepOptions,
   ViolinOptions,
   TileOptions,
+  Bin2dOptions,
   ContourOptions,
   ErrorbarOptions,
   RectOptions,
@@ -125,6 +127,7 @@ export type {
 // Statistical transformations
 export {
   stat_bin,
+  stat_bin2d,
   stat_boxplot,
   stat_density,
   stat_smooth,
@@ -132,6 +135,7 @@ export {
   stat_qq,
   stat_qq_line,
   computeBins,
+  computeBins2d,
   computeBoxplotStats,
   computeDensity,
   computeSmooth,
@@ -141,6 +145,8 @@ export {
 } from './stats'
 export type {
   StatBinParams,
+  StatBin2dParams,
+  Bin2dResult,
   BinResult,
   StatBoxplotParams,
   BoxplotResult,

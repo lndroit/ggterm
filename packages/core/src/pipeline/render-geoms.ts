@@ -1275,8 +1275,8 @@ export function renderGeomTile(
     const canvasWidth = Math.abs(scales.x.range[1] - scales.x.range[0])
     halfW = Math.max(1, Math.floor(canvasWidth / (xDomain.length * 2)))
   } else {
-    // For continuous x, infer from data spacing
-    let tileWidth = geom.params.width as number | undefined
+    // For continuous x, check if data has width property (e.g., from bin2d), then geom.params, then infer from spacing
+    let tileWidth = (data[0]?.width as number | undefined) ?? (geom.params.width as number | undefined)
     if (!tileWidth) {
       const xVals = [...new Set(data.map((r) => Number(r[aes.x])).filter(v => !isNaN(v)))].sort((a, b) => a - b)
       if (xVals.length > 1) {
@@ -1300,8 +1300,8 @@ export function renderGeomTile(
     const canvasHeight = Math.abs(scales.y.range[1] - scales.y.range[0])
     halfH = Math.max(1, Math.floor(canvasHeight / (yDomain.length * 2)))
   } else {
-    // For continuous y, infer from data spacing
-    let tileHeight = geom.params.height as number | undefined
+    // For continuous y, check if data has height property (e.g., from bin2d), then geom.params, then infer from spacing
+    let tileHeight = (data[0]?.height as number | undefined) ?? (geom.params.height as number | undefined)
     if (!tileHeight) {
       const yVals = [...new Set(data.map((r) => Number(r[aes.y])).filter(v => !isNaN(v)))].sort((a, b) => a - b)
       if (yVals.length > 1) {
@@ -1916,6 +1916,7 @@ export function renderGeom(
       break
     case 'tile':
     case 'raster':
+    case 'bin2d':
       renderGeomTile(data, geom, aes, scales, canvas)
       break
     case 'contour':

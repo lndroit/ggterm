@@ -36,6 +36,7 @@ import {
   geom_rect,
   geom_raster,
   geom_tile,
+  geom_bin2d,
   geom_text,
   geom_label,
   geom_contour,
@@ -61,7 +62,7 @@ const GEOM_TYPES = [
   'point', 'line', 'path', 'step', 'bar', 'col', 'histogram', 'freqpoly',
   'boxplot', 'violin', 'area', 'ribbon', 'rug', 'errorbar', 'errorbarh',
   'crossbar', 'linerange', 'pointrange', 'smooth', 'segment', 'rect',
-  'raster', 'tile', 'text', 'label', 'contour', 'contour_filled',
+  'raster', 'tile', 'bin2d', 'text', 'label', 'contour', 'contour_filled',
   'density_2d', 'qq'
 ]
 
@@ -545,7 +546,7 @@ function validateGeomType(geomType: string): void {
     console.error(`  Bars/Areas:   bar, col, histogram, freqpoly, area, ribbon`)
     console.error(`  Distributions: boxplot, violin, qq, density_2d`)
     console.error(`  Uncertainty:  errorbar, errorbarh, crossbar, linerange, pointrange`)
-    console.error(`  2D:           tile, rect, raster, contour, contour_filled`)
+    console.error(`  2D:           tile, rect, raster, bin2d, contour, contour_filled`)
     console.error(`  Text:         text, label`)
     console.error(`  Other:        rug`)
     console.error(`\nReference lines (add with +):`)
@@ -658,7 +659,7 @@ function handlePlot(args: string[]): void {
   if (facetVar && facetVar !== '-') validateColumn(facetVar, headers, 'facet')
 
   // Check for missing y when required
-  const geomsRequiringY = ['line', 'path', 'step', 'point', 'smooth', 'segment', 'area', 'ribbon', 'tile', 'rect', 'raster', 'contour', 'contour_filled', 'density_2d', 'text', 'label', 'col', 'errorbar', 'errorbarh', 'crossbar', 'linerange', 'pointrange']
+  const geomsRequiringY = ['line', 'path', 'step', 'point', 'smooth', 'segment', 'area', 'ribbon', 'tile', 'rect', 'raster', 'bin2d', 'contour', 'contour_filled', 'density_2d', 'text', 'label', 'col', 'errorbar', 'errorbarh', 'crossbar', 'linerange', 'pointrange']
   if (geomsRequiringY.includes(geomType) && (!y || y === '-')) {
     console.error(`\nError: Geometry type "${geomType}" requires a y column`)
     console.error(`\nUsage: cli-plot.ts ${dataFile} <x> <y> [color] [title] ${geomType}`)
@@ -670,9 +671,9 @@ function handlePlot(args: string[]): void {
   // Note: y may be absent for histograms (stat computes it)
   const aes: Record<string, string> = { x }
   if (y && y !== '-') aes.y = y
-  // For heatmap geoms (tile, raster), use fill instead of color
+  // For heatmap geoms (tile, raster, bin2d), use fill instead of color
   if (color && color !== '-') {
-    if (geomType === 'tile' || geomType === 'raster') {
+    if (geomType === 'tile' || geomType === 'raster' || geomType === 'bin2d') {
       aes.fill = color
     } else {
       aes.color = color
@@ -748,6 +749,9 @@ function handlePlot(args: string[]): void {
       break
     case 'tile':
       plot = plot.geom(geom_tile())
+      break
+    case 'bin2d':
+      plot = plot.geom(geom_bin2d())
       break
     case 'text':
       plot = plot.geom(geom_text())

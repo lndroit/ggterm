@@ -12,6 +12,7 @@ import { renderGeom } from './render-geoms'
 import { renderAxes, renderTitle, renderMultiLegend, renderGridLines, calculateTicks, formatTick } from './render-axes'
 import type { LegendEntry } from './render-axes'
 import { stat_bin } from '../stats/bin'
+import { stat_bin2d } from '../stats/bin2d'
 import { stat_boxplot } from '../stats/boxplot'
 import { stat_count } from '../stats/count'
 import { stat_density, stat_ydensity } from '../stats/density'
@@ -189,6 +190,14 @@ function applyStatTransform(
       dparams: geom.params.dparams as { mean?: number; sd?: number; rate?: number },
     })
     return qqLineStat.compute(data, aes)
+  } else if (geom.stat === 'bin2d') {
+    const bin2dStat = stat_bin2d({
+      bins: geom.params.bins as number,
+      binsx: geom.params.binsx as number,
+      binsy: geom.params.binsy as number,
+      drop: geom.params.drop as boolean,
+    })
+    return bin2dStat.compute(data, aes)
   }
   return data
 }
@@ -300,6 +309,11 @@ export function renderToCanvas(
         scaleAes = { ...spec.aes, x: 'x', y: 'y' }
       }
       break
+    } else if (geom.stat === 'bin2d') {
+      // 2D binning: x and y are bin centers, fill is count
+      scaleData = applyStatTransform(spec.data, geom, spec.aes)
+      scaleAes = { ...spec.aes, x: 'x', y: 'y', fill: 'fill' }
+      break
     }
   }
 
@@ -364,6 +378,9 @@ export function renderToCanvas(
       } else if (geom.stat === 'qq_line') {
         // Q-Q line uses segment format with endpoints
         geomAes = { ...spec.aes, x: 'x', y: 'y', xend: 'xend', yend: 'yend' }
+      } else if (geom.stat === 'bin2d') {
+        // bin2d outputs x, y (centers), fill (count), width, height
+        geomAes = { ...spec.aes, x: 'x', y: 'y', fill: 'fill' }
       }
 
       // Apply coordinate transformation (flip, polar, trans, etc.)
@@ -786,9 +803,16 @@ function renderPanel(
   // Render geometry layers
   for (const geom of spec.geoms) {
     let geomData = applyStatTransform(panel.data, geom, spec.aes)
+    let geomAes = spec.aes
+    // Update geomAes for stat-transformed data
+    if (geom.stat === 'bin' || geom.stat === 'boxplot' || geom.stat === 'count' || geom.stat === 'qq') {
+      geomAes = { ...spec.aes, x: 'x', y: 'y' }
+    } else if (geom.stat === 'bin2d') {
+      geomAes = { ...spec.aes, x: 'x', y: 'y', fill: 'fill' }
+    }
     // Apply coordinate transformation
-    geomData = applyCoordTransform(geomData, spec.aes, spec.coord)
-    renderGeom(geomData, geom, spec.aes, scales, canvas, spec.coord.type)
+    geomData = applyCoordTransform(geomData, geomAes, spec.coord)
+    renderGeom(geomData, geom, geomAes, scales, canvas, spec.coord.type)
   }
 }
 
